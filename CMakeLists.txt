@@ -19,6 +19,14 @@ target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE OBS::libobs)
 if(ENABLE_FRONTEND_API)
   find_package(obs-frontend-api REQUIRED)
   target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE OBS::obs-frontend-api)
+  # Der exportierte obs-frontend-api-Target liefert die Header-Include-Dir nicht
+  # (nur BUILD_INTERFACE). Header aus den heruntergeladenen obs-studio-Quellen ergänzen.
+  file(GLOB _obs_src_dirs "${CMAKE_CURRENT_SOURCE_DIR}/.deps/obs-studio-*")
+  foreach(_d IN LISTS _obs_src_dirs)
+    if(EXISTS "${_d}/UI/obs-frontend-api/obs-frontend-api.h")
+      target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE "${_d}/UI/obs-frontend-api")
+    endif()
+  endforeach()
 endif()
 
 if(ENABLE_QT)
