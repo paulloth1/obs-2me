@@ -73,6 +73,7 @@ jobs:
 
   macos-build:
     name: Build for macOS 🍏
+    if: false # 2ME: vorerst nur Windows-Build (spart den teuren 10x-macOS-Runner)
     runs-on: macos-15
     needs: check-event
     defaults:
@@ -177,6 +178,7 @@ jobs:
 
   ubuntu-build:
     name: Build for Ubuntu 🐧
+    if: false # 2ME: vorerst nur Windows-Build
     strategy:
       matrix:
         os: [ubuntu-24.04]

@@ -19,14 +19,31 @@ target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE OBS::libobs)
 if(ENABLE_FRONTEND_API)
   find_package(obs-frontend-api REQUIRED)
   target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE OBS::obs-frontend-api)
-  # Der exportierte obs-frontend-api-Target liefert die Header-Include-Dir nicht
-  # (nur BUILD_INTERFACE). Header aus den heruntergeladenen obs-studio-Quellen ergänzen.
-  file(GLOB _obs_src_dirs "${CMAKE_CURRENT_SOURCE_DIR}/.deps/obs-studio-*")
-  foreach(_d IN LISTS _obs_src_dirs)
-    if(EXISTS "${_d}/UI/obs-frontend-api/obs-frontend-api.h")
-      target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE "${_d}/UI/obs-frontend-api")
-    endif()
-  endforeach()
+  # Diagnose: welche Include-Dir liefert der Target wirklich?
+  if(TARGET OBS::obs-frontend-api)
+    get_target_property(_fa_inc OBS::obs-frontend-api INTERFACE_INCLUDE_DIRECTORIES)
+    message(STATUS "2ME-DIAG: OBS::obs-frontend-api INTERFACE_INCLUDE_DIRECTORIES = ${_fa_inc}")
+  endif()
+  message(STATUS "2ME-DIAG: obs-frontend-api_DIR = ${obs-frontend-api_DIR}")
+
+  # Robuste Fallback-Suche nach obs-frontend-api.h (Quelle ODER Install-Prefix)
+  file(
+    GLOB _fa_cands
+    "${CMAKE_CURRENT_SOURCE_DIR}/.deps/obs-studio-*/UI/obs-frontend-api/obs-frontend-api.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/.deps/include/obs-frontend-api.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/.deps/include/obs/obs-frontend-api.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/.deps/*/include/obs-frontend-api.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/.deps/*/include/obs/obs-frontend-api.h"
+  )
+  message(STATUS "2ME-DIAG: frontend-api Header-Kandidaten = ${_fa_cands}")
+  if(_fa_cands)
+    list(GET _fa_cands 0 _fa0)
+    get_filename_component(_fadir "${_fa0}" DIRECTORY)
+    target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE "${_fadir}")
+    message(STATUS "2ME-DIAG: frontend-api Include ergänzt -> ${_fadir}")
+  else()
+    message(WARNING "2ME-DIAG: obs-frontend-api.h NICHT in .deps gefunden")
+  endif()
 endif()
 
 if(ENABLE_QT)
