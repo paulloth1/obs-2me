@@ -1,59 +1,66 @@
-# OBS Plugin Template
+# 2ME — Second Mix/Effects for OBS
 
-## Introduction
+Ein OBS-Plugin, das OBS um zusätzliche **Mischebenen (M/E-Bänke)** erweitert — wie bei
+einem Hardware-Bildmischer (ATEM / TriCaster / Ross / Sony). Jede Bank hat einen eigenen
+**Program-/Preview-Bus** mit **Cut/Auto-Übergängen** und wird über ein **Mischpult-Dock**
+bedient.
 
-The plugin template is meant to be used as a starting point for OBS Studio plugin development. It includes:
+> **Status: Beta / Work in Progress.** Reine Video-Mischung (kein eigener Audio-Mix —
+> Audio läuft weiter über den normalen OBS-Mixer). Entwickelt/getestet mit **OBS 31 / Qt 6.8**
+> (benötigt OBS 30+).
 
-* Boilerplate plugin source code
-* A CMake project file
-* GitHub Actions workflows and repository actions
+OBS' Haupt-Canvas + Studio-Modus ist faktisch **M/E 1** — dieses Plugin liefert **M/E 2 … n**.
 
-## Supported Build Environments
+## Features
 
-| Platform  | Tool   |
-|-----------|--------|
-| Windows   | Visual Studio 17 2022 |
-| macOS     | XCode 16.0 |
-| Windows, macOS  | CMake 3.30.5 |
-| Ubuntu 24.04 | CMake 3.28.3 |
-| Ubuntu 24.04 | `ninja-build` |
-| Ubuntu 24.04 | `pkg-config`
-| Ubuntu 24.04 | `build-essential` |
+- **M/E-Bank als Quelle** („2ME — Mix/Effects (Re-entry)"): jede Instanz ist eine eigene
+  Mischebene; ihr Ausgang lässt sich wie jede andere Quelle in Hauptszenen platzieren
+  („Re-entry").
+- **Program-/Preview-Bus** aus OBS-Szenen, **CUT** (sofort) und **AUTO** (Übergang); beim
+  Take tauschen PGM/PVW (Ping-Pong wie am Pult).
+- **Übergänge**: Fade / Swipe / Slide mit einstellbarer Dauer.
+- **Mischpult-Dock**: Bank-Auswahl, **PGM/PVW-Tally** (rot/grün), Preview-Bus-Buttons,
+  CUT/AUTO, Übergangstyp + Dauer. Bank-/Szenenliste aktualisiert sich automatisch; die
+  zuletzt gewählte Bank wird gemerkt.
+- **Hotkeys** je Bank (Einstellungen → Hotkeys: „2ME: Cut" / „2ME: Auto/Take").
+- **Mehrere Bänke** = einfach mehrere Quell-Instanzen einfügen.
 
-## Quick Start
+## Installation (Beta)
 
-An absolute bare-bones [Quick Start Guide](https://github.com/obsproject/obs-plugintemplate/wiki/Quick-Start-Guide) is available in the wiki.
+### Windows
+1. Das Plugin-Zip entpacken.
+2. Den Ordner `obs-2me` in das OBS-Plugin-Verzeichnis kopieren, sodass die Struktur so aussieht:
+   ```
+   %APPDATA%\obs-studio\plugins\obs-2me\bin\64bit\obs-2me.dll
+   %APPDATA%\obs-studio\plugins\obs-2me\data\...
+   ```
+   Tipp: `%APPDATA%` in die Explorer-Adressleiste eingeben → landet in
+   `C:\Users\<Name>\AppData\Roaming`. (Kein Administrator nötig.)
+3. OBS starten. Dock über **Docks → 2ME** einblenden.
 
-## Documentation
+### macOS
+`obs-2me.plugin` nach `~/Library/Application Support/obs-studio/plugins/` kopieren, OBS starten.
 
-All documentation can be found in the [Plugin Template Wiki](https://github.com/obsproject/obs-plugintemplate/wiki).
+## Benutzung
 
-Suggested reading to get up and running:
+1. In einer Szene **Quelle hinzufügen → „2ME — Mix/Effects (Re-entry)"**.
+2. **Docks → 2ME** öffnen und im Dock die Bank wählen.
+3. Im **Preview-Bus** eine Szene anklicken (= PVW), dann **CUT** oder **AUTO** — der Bank-
+   Ausgang (die Re-entry-Quelle in deiner Hauptszene) schaltet entsprechend.
 
-* [Getting started](https://github.com/obsproject/obs-plugintemplate/wiki/Getting-Started)
-* [Build system requirements](https://github.com/obsproject/obs-plugintemplate/wiki/Build-System-Requirements)
-* [Build system options](https://github.com/obsproject/obs-plugintemplate/wiki/CMake-Build-System-Options)
+> ⚠️ PGM/PVW **nicht** auf die Szene legen, die die 2ME-Quelle selbst enthält → Feedback-Schleife.
 
-## GitHub Actions & CI
+## Aus dem Quellcode bauen
 
-Default GitHub Actions workflows are available for the following repository actions:
+Das Projekt basiert auf dem [OBS Plugin Template](https://github.com/obsproject/obs-plugintemplate).
 
-* `push`: Run for commits or tags pushed to `master` or `main` branches.
-* `pr-pull`: Run when a Pull Request has been pushed or synchronized.
-* `dispatch`: Run when triggered by the workflow dispatch in GitHub's user interface.
-* `build-project`: Builds the actual project and is triggered by other workflows.
-* `check-format`: Checks CMake and plugin source code formatting and is triggered by other workflows.
+- **Windows / macOS / Linux (offiziell):** über GitHub Actions (`.github/workflows`) oder lokal
+  mit dem Template-Build (CMake; Windows: Visual Studio 2022, macOS: Xcode).
+- **macOS schnell, ohne volles Xcode:** `./dev/build.sh` (isolierter Ninja-Dev-Build) —
+  siehe [dev/README.md](dev/README.md).
 
-The workflows make use of GitHub repository actions (contained in `.github/actions`) and build scripts (contained in `.github/scripts`) which are not needed for local development, but might need to be adjusted if additional/different steps are required to build the plugin.
+Projektziele, Architektur und Fortschritt: siehe [PROJEKT.md](PROJEKT.md).
 
-### Retrieving build artifacts
+## Lizenz
 
-Successful builds on GitHub Actions will produce build artifacts that can be downloaded for testing. These artifacts are commonly simple archives and will not contain package installers or installation programs.
-
-### Building a Release
-
-To create a release, an appropriately named tag needs to be pushed to the `main`/`master` branch using semantic versioning (e.g., `12.3.4`, `23.4.5-beta2`). A draft release will be created on the associated repository with generated installer packages or installation programs attached as release artifacts.
-
-## Signing and Notarizing on macOS
-
-Basic concepts of codesigning and notarization on macOS are explained in the correspodning [Wiki article](https://github.com/obsproject/obs-plugintemplate/wiki/Codesigning-On-macOS) which has a specific section for the [GitHub Actions setup](https://github.com/obsproject/obs-plugintemplate/wiki/Codesigning-On-macOS#setting-up-code-signing-for-github-actions).
+GPL v2 or later — siehe [LICENSE](LICENSE).
