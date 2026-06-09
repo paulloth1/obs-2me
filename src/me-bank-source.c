@@ -24,7 +24,7 @@ the Free Software Foundation; either version 2 of the License, or
 
 #include <obs-module.h>
 #include <util/platform.h>
-#include <pthread.h>
+#include <util/threading.h> /* portables pthread_mutex_* (auch Windows) */
 #include <string.h>
 
 #include "me-bank.h"
