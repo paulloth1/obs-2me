@@ -1,3 +1,5 @@
+## Caution! Vibe Coded
+
 # 2ME — Second Mix/Effects for OBS
 
 Ein OBS-Plugin, das OBS um zusätzliche **Mischebenen (M/E-Bänke)** erweitert — wie bei
