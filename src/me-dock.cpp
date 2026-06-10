@@ -461,4 +461,4 @@ void me_dock_register(void)
 
 	reconcile_docks();
 	obs_log(LOG_INFO, "Multi-M/E dock manager registered");
-}
+ }

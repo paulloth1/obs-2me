@@ -22,6 +22,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>
 #include "me-bank.h"
 #include "me-dock.h"
 #include "me-multiview.h"
+#include "me-websocket.h"
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE(PLUGIN_NAME, "en-US")
@@ -38,6 +39,7 @@ void obs_module_post_load(void)
 {
 	me_dock_register();
 	me_multiview_register();
+	me_websocket_register();
 }
 
 void obs_module_unload(void)
