@@ -1,5 +1,5 @@
 /*
-2ME — Second Mix/Effects for OBS
+Multi-M/E — Multiple Mix/Effects for OBS
 Copyright (C) 2026 Paul Loth <paulloth2208@gmail.com>
 
 This program is free software; you can redistribute it and/or modify
@@ -14,7 +14,7 @@ the Free Software Foundation; either version 2 of the License, or
 extern "C" {
 #endif
 
-/* Registriert den Quelltyp "2me_bank_output" (eine M/E-Mischebene als
+/* Registriert den Quelltyp "multi_me_bank" (eine M/E-Mischebene als
  * Re-entry-Quelle). In obs_module_load() aufrufen. */
 void me_bank_register_source(void);
 

@@ -33,11 +33,11 @@
     },
     "platformConfig": {
         "macos": {
-            "bundleId": "com.diyobsplugins.obs-2me"
+            "bundleId": "com.diyobsplugins.multi-me"
         }
     },
-    "name": "obs-2me",
-    "displayName": "2ME — Second Mix/Effects for OBS",
+    "name": "multi-me",
+    "displayName": "Multi-M/E — Multiple Mix/Effects for OBS",
     "version": "0.1.0",
     "author": "Paul Loth",
     "website": "https://github.com/paulloth",

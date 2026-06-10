@@ -1,4 +1,4 @@
-# 2ME — Zweite Mischebene für OBS Studio
+# Multi-M/E — Zweite Mischebene für OBS Studio
 
 > Living-Document: Ziele, Architektur, Roadmap und Fortschritt für ein OBS-Plugin,
 > das OBS um zusätzliche Mischebenen (M/E-Bänke) erweitert — analog zu ATEM /
@@ -78,7 +78,7 @@ eigenen Source-Typ:
 
 ```c
 struct obs_source_info reentry_info = {
-    .id            = "2me_bank_output",
+    .id            = "multi_me_bank",
     .type          = OBS_SOURCE_TYPE_INPUT,
     .output_flags  = OBS_SOURCE_VIDEO | OBS_SOURCE_COMPOSITE,
     .get_name      = ...,
@@ -172,7 +172,7 @@ Bus-Swap = nur Zeigertausch; das gemischte Bild liegt nach Abschluss korrekt auf
 │  ├─ plugin-main.cpp        obs_module_load/unload, Registrierungen
 │  ├─ me-bank.{hpp,cpp}      MEBank: Transition + PGM/PVW + Take-Logik
 │  ├─ bank-manager.{hpp,cpp} Verwaltung, Persistenz, Mutex
-│  ├─ reentry-source.cpp     Custom-Source "2me_bank_output"
+│  ├─ reentry-source.cpp     Custom-Source "multi_me_bank"
 │  ├─ ui/
 │  │  ├─ dock.{hpp,cpp}      QWidget-Dock + Bank-Tabs
 │  │  └─ bank-panel.{hpp,cpp} PGM/PVW-Busse, CUT/AUTO, Fade-Dauer
@@ -207,12 +207,12 @@ Bus-Swap = nur Zeigertausch; das gemischte Bild liegt nach Abschluss korrekt auf
 ## 5. Roadmap (Phasen & Meilensteine)
 
 - [x] **Phase 0 — Setup & Skelett** ✅ (2026-06-09)
-      Template nach `2ME/` gespiegelt, auf `obs-2me` konfiguriert, git-Repo. Isolierter
-      `dev/`-Ninja-Build (ohne volles Xcode) grün; `obs-2me.plugin` lädt in OBS 31.0.2
-      (Log: „[obs-2me] 2ME plugin loaded successfully"). *(Leeres Dock → Phase 2, da Qt
+      Template nach `Multi-M/E/` gespiegelt, auf `multi-me` konfiguriert, git-Repo. Isolierter
+      `dev/`-Ninja-Build (ohne volles Xcode) grün; `multi-me.plugin` lädt in OBS 31.0.2
+      (Log: „[multi-me] Multi-M/E plugin loaded successfully"). *(Leeres Dock → Phase 2, da Qt
       nötig.)* *DoD erfüllt: Plugin baut + lädt + loggt.*
 - [x] **Phase 1 — Single-Bank-Core (Walking Skeleton)** — Code fertig, lädt (2026-06-09)
-      Quelltyp `2me_bank_output` (src/me-bank-source.c): jede Instanz = eine Bank mit
+      Quelltyp `multi_me_bank` (src/me-bank-source.c): jede Instanz = eine Bank mit
       privater Transition-Source, PGM/PVW als OBS-Szenen (Properties), Cut/Auto via
       OBS-Hotkeys, Re-entry über Platzierung in Hauptszene. Aktiv-/Sichtbar-Propagation
       an Bank-Szenen via `obs_source_inc/dec_active/showing`. Lädt in OBS 31.0.2 ohne
@@ -237,7 +237,7 @@ Bus-Swap = nur Zeigertausch; das gemischte Bild liegt nach Abschluss korrekt auf
 - [ ] `MEBank`: Transition-Source erzeugen (`fade_transition`), `obs_transition_set_size` = Canvas.
 - [ ] Zwei Test-Szenen als PGM/PVW verdrahten, initial `obs_transition_set(transition, pgm)`.
 - [ ] Take-Logik (Cut/Auto) + Bus-Swap über `"transition_stop"`-Signal (siehe §3.8).
-- [ ] Custom-Source `2me_bank_output`: `video_render` → `obs_source_video_render(transition)`,
+- [ ] Custom-Source `multi_me_bank`: `video_render` → `obs_source_video_render(transition)`,
       plus `enum_active_sources` und `get_width/height`.
 - [ ] Registrierung in `obs_module_load`; eine Bank global instanziieren.
 - [ ] Manueller Test: Re-entry-Quelle in Hauptszene ziehen, Cut/Auto per Test-Hotkey.
@@ -291,12 +291,12 @@ Bus-Swap = nur Zeigertausch; das gemischte Bild liegt nach Abschluss korrekt auf
   `-undefined dynamic_lookup`; `.plugin`-Bundle wird ad-hoc signiert und nach
   `~/Library/.../obs-studio/plugins/` installiert; Build via `./dev/build.sh`). Der
   offizielle Xcode-Template-Build im Root bleibt für CI/Release erhalten.
-  `obs-2me.plugin` lädt verifiziert in OBS 31.0.2. Offen: leere `en-US.ini` noch nicht
+  `multi-me.plugin` lädt verifiziert in OBS 31.0.2. Offen: leere `en-US.ini` noch nicht
   ins Bundle gepackt → harmlose Locale-Warnung, mit `data/`-Bundling beheben.
-- **2026-06-09** — **Phase 1 implementiert.** Neuer Quelltyp `2me_bank_output`
+- **2026-06-09** — **Phase 1 implementiert.** Neuer Quelltyp `multi_me_bank`
   ([src/me-bank-source.c](src/me-bank-source.c)): jede Instanz = eine M/E-Bank mit
   privater Transition-Source, PGM/PVW-Auswahl (OBS-Szenen via Properties), Cut/Auto
-  über OBS-Hotkeys („2ME: Cut" / „2ME: Auto/Take"), Take swappt PGM/PVW. Aktiv-/
+  über OBS-Hotkeys („Multi-M/E: Cut" / „Multi-M/E: Auto/Take"), Take swappt PGM/PVW. Aktiv-/
   Sichtbar-Propagation an Bank-Szenen via `obs_source_inc/dec_active/showing`.
   Video-only. Mehrere Bänke = mehrere Instanzen (Basis für Phase 3). Baut & lädt
   verifiziert in OBS 31.0.2; manueller Funktionstest steht aus.
@@ -304,11 +304,11 @@ Bus-Swap = nur Zeigertausch; das gemischte Bild liegt nach Abschluss korrekt auf
   Input-Quellen liefert. Auf `obs_enum_scenes` umgestellt → Szenen werden gelistet.
   Neu gebaut & geladen.
 - **2026-06-09** — Crash beim Neustart analysiert: **nicht** das Plugin (Crash-Report
-  ohne 2ME-Symbole; Ursache war mein zu aggressives Neustart-Skript mit `pkill` während
+  ohne Multi-M/E-Symbole; Ursache war mein zu aggressives Neustart-Skript mit `pkill` während
   OBS herunterfuhr). Künftig nur sauberer Neustart. Cut/Auto zusätzlich als **Buttons in
   den Quellen-Eigenschaften** (`obs_properties_add_button2`, priv = Bank) → live testbar,
   unabhängig von Hotkeys. Klarstellung: „Sichtbar/Anzeigen"-Hotkeys sind OBS-Standard pro
-  Szenen-Element, nicht 2ME (unsere heißen „2ME: Cut" / „2ME: Auto/Take").
+  Szenen-Element, nicht Multi-M/E (unsere heißen „Multi-M/E: Cut" / „Multi-M/E: Auto/Take").
 - **2026-06-09** — Bugfix „Auto nur einmal": `transition_stop` feuert bei video-only-
   Nutzung **nie** (der Audio-Teil des Übergangs schließt nie ab → siehe
   obs-source-transition.c:670). Lösung: `in_transition` **zeitbasiert** in `video_tick`
@@ -323,7 +323,7 @@ Bus-Swap = nur Zeigertausch; das gemischte Bild liegt nach Abschluss korrekt auf
   ([src/me-dock.cpp](src/me-dock.cpp), `obs_frontend_add_dock_by_id`, registriert in
   `obs_module_post_load`) baut grün; `otool -L` zeigt nur libc++/libSystem.
 - **2026-06-09** — **Phase 2b: volles Dock-UI.** [src/me-dock.cpp](src/me-dock.cpp):
-  Bank-Auswahl (alle `2me_bank_output`-Quellen), PGM/PVW-Tally (rot/grün, 200 ms-Timer),
+  Bank-Auswahl (alle `multi_me_bank`-Quellen), PGM/PVW-Tally (rot/grün, 200 ms-Timer),
   Preview-Bus (Button je Szene → `set_preview`), CUT/AUTO. C↔C++-Brücke über `proc_handler`
   auf der Bank (`cut`/`auto_take`/`set_preview`/`get_state`). Lädt verifiziert
   („dock registered: ok"), kein Crash. Nebenbefund: andere Dritt-Plugins scheitern auf dem

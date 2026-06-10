@@ -1,6 +1,6 @@
 ## Caution! Vibe Coded
 
-# 2ME — Second Mix/Effects for OBS
+# Multi-M/E — Multiple Mix/Effects for OBS
 
 Ein OBS-Plugin, das OBS um zusätzliche **Mischebenen (M/E-Bänke)** erweitert — wie bei
 einem Hardware-Bildmischer (ATEM / TriCaster / Ross / Sony). Jede Bank hat einen eigenen
@@ -15,7 +15,7 @@ OBS' Haupt-Canvas + Studio-Modus ist faktisch **M/E 1** — dieses Plugin liefer
 
 ## Features
 
-- **M/E-Bank als Quelle** („2ME — Mix/Effects (Re-entry)"): jede Instanz ist eine eigene
+- **M/E-Bank als Quelle** („Multi-M/E — Mix/Effects (Re-entry)"): jede Instanz ist eine eigene
   Mischebene; ihr Ausgang lässt sich wie jede andere Quelle in Hauptszenen platzieren
   („Re-entry").
 - **Program-/Preview-Bus** aus OBS-Szenen, **CUT** (sofort) und **AUTO** (Übergang); beim
@@ -24,33 +24,33 @@ OBS' Haupt-Canvas + Studio-Modus ist faktisch **M/E 1** — dieses Plugin liefer
 - **Mischpult-Dock**: Bank-Auswahl, **PGM/PVW-Tally** (rot/grün), Preview-Bus-Buttons,
   CUT/AUTO, Übergangstyp + Dauer. Bank-/Szenenliste aktualisiert sich automatisch; die
   zuletzt gewählte Bank wird gemerkt.
-- **Hotkeys** je Bank (Einstellungen → Hotkeys: „2ME: Cut" / „2ME: Auto/Take").
+- **Hotkeys** je Bank (Einstellungen → Hotkeys: „Multi-M/E: Cut" / „Multi-M/E: Auto/Take").
 - **Mehrere Bänke** = einfach mehrere Quell-Instanzen einfügen.
 
 ## Installation (Beta)
 
 ### Windows
 1. Das Plugin-Zip entpacken.
-2. Den Ordner `obs-2me` in das OBS-Plugin-Verzeichnis kopieren, sodass die Struktur so aussieht:
+2. Den Ordner `multi-me` in das OBS-Plugin-Verzeichnis kopieren, sodass die Struktur so aussieht:
    ```
-   %APPDATA%\obs-studio\plugins\obs-2me\bin\64bit\obs-2me.dll
-   %APPDATA%\obs-studio\plugins\obs-2me\data\...
+   %APPDATA%\obs-studio\plugins\multi-me\bin\64bit\multi-me.dll
+   %APPDATA%\obs-studio\plugins\multi-me\data\...
    ```
    Tipp: `%APPDATA%` in die Explorer-Adressleiste eingeben → landet in
    `C:\Users\<Name>\AppData\Roaming`. (Kein Administrator nötig.)
-3. OBS starten. Dock über **Docks → 2ME** einblenden.
+3. OBS starten. Dock über **Docks → Multi-M/E** einblenden.
 
 ### macOS
-`obs-2me.plugin` nach `~/Library/Application Support/obs-studio/plugins/` kopieren, OBS starten.
+`multi-me.plugin` nach `~/Library/Application Support/obs-studio/plugins/` kopieren, OBS starten.
 
 ## Benutzung
 
-1. In einer Szene **Quelle hinzufügen → „2ME — Mix/Effects (Re-entry)"**.
-2. **Docks → 2ME** öffnen und im Dock die Bank wählen.
+1. In einer Szene **Quelle hinzufügen → „Multi-M/E — Mix/Effects (Re-entry)"**.
+2. **Docks → Multi-M/E** öffnen und im Dock die Bank wählen.
 3. Im **Preview-Bus** eine Szene anklicken (= PVW), dann **CUT** oder **AUTO** — der Bank-
    Ausgang (die Re-entry-Quelle in deiner Hauptszene) schaltet entsprechend.
 
-> ⚠️ PGM/PVW **nicht** auf die Szene legen, die die 2ME-Quelle selbst enthält → Feedback-Schleife.
+> ⚠️ PGM/PVW **nicht** auf die Szene legen, die die Multi-M/E-Quelle selbst enthält → Feedback-Schleife.
 
 ## Aus dem Quellcode bauen
 

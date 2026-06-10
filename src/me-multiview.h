@@ -11,9 +11,9 @@ GPL v2+ (siehe plugin-main.c).
 extern "C" {
 #endif
 
-/* Registriert das Multi-M/E-Dock im OBS-Frontend. Aus obs_module_post_load() aufrufen
- * (Frontend + Qt-Hauptthread sind dann bereit). */
-void me_dock_register(void);
+/* Registriert das "Multi-M/E Multiview"-Menü (Tools) zum Öffnen einer PGM/PVW-
+ * Multiview je M/E-Bank als Fenster oder Vollbild. Aus obs_module_post_load(). */
+void me_multiview_register(void);
 
 #ifdef __cplusplus
 }

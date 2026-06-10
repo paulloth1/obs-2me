@@ -1,4 +1,4 @@
-# Schneller, isolierter macOS-Dev-Build für 2ME (Ninja, ohne volles Xcode).
+# Schneller, isolierter macOS-Dev-Build für Multi-M/E (Ninja, ohne volles Xcode).
 #
 # Dieser Build existiert NEBEN dem offiziellen Template-Build (Root-CMakeLists.txt,
 # Xcode-Generator) und lässt diesen unberührt. Er dient nur der schnellen lokalen
@@ -22,7 +22,7 @@ if(APPLE AND NOT CMAKE_OSX_SYSROOT)
   set(CMAKE_OSX_SYSROOT "${_macos_sdk}" CACHE PATH "macOS SDK" FORCE)
 endif()
 
-project(obs-2me VERSION 0.1.0 LANGUAGES C CXX)
+project(multi-me VERSION 0.1.0 LANGUAGES C CXX)
 
 set(OBS_VERSION "31.0.2" CACHE STRING "obs-studio Header-Version (= laufende OBS)")
 set(LIBOBS_INCLUDE
@@ -48,7 +48,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
-message(STATUS "2ME: Qt6 ${Qt6_VERSION} aus ${QT6_PREFIX}")
+message(STATUS "Multi-M/E: Qt6 ${Qt6_VERSION} aus ${QT6_PREFIX}")
 
 # CLT-Workaround: auf dieser Maschine liegen die libc++-Header nur im SDK, nicht
 # im Toolchain-Pfad (CommandLineTools/usr/include/c++/v1 fehlt) -> für C++ ergänzen.
@@ -57,7 +57,7 @@ if(APPLE
    AND EXISTS "${_libcxx}/type_traits"
    AND NOT EXISTS "/Library/Developer/CommandLineTools/usr/include/c++/v1/type_traits")
   add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:-isystem>" "$<$<COMPILE_LANGUAGE:CXX>:${_libcxx}>")
-  message(STATUS "2ME: libc++-Header aus SDK ergänzt (${_libcxx})")
+  message(STATUS "Multi-M/E: libc++-Header aus SDK ergänzt (${_libcxx})")
 endif()
 
 # plugin-support.c aus der Template-Vorlage generieren (@CMAKE_PROJECT_NAME@ etc.)
@@ -71,7 +71,9 @@ add_library(
   ${PROJECT_NAME} MODULE
   "${CMAKE_CURRENT_SOURCE_DIR}/../src/plugin-main.c"
   "${CMAKE_CURRENT_SOURCE_DIR}/../src/me-bank-source.c"
+  "${CMAKE_CURRENT_SOURCE_DIR}/../src/me-scenes.c"
   "${CMAKE_CURRENT_SOURCE_DIR}/../src/me-dock.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/../src/me-multiview.cpp"
   "${CMAKE_CURRENT_BINARY_DIR}/plugin-support.c"
 )
 
@@ -109,7 +111,7 @@ set_target_properties(
     BUNDLE TRUE
     BUNDLE_EXTENSION "plugin"
     MACOSX_BUNDLE_BUNDLE_NAME "${PROJECT_NAME}"
-    MACOSX_BUNDLE_GUI_IDENTIFIER "com.diyobsplugins.obs-2me"
+    MACOSX_BUNDLE_GUI_IDENTIFIER "com.diyobsplugins.multi-me"
     MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
     MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
 )

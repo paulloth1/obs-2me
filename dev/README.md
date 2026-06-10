@@ -11,7 +11,7 @@ Releases genutzt.
 - Kompiliert die geteilten Quellen aus [`../src`](../src) gegen die **libobs-Header**.
 - Linkt mit `-undefined dynamic_lookup`: libobs-Symbole werden erst beim Laden
   durch OBS aufgelöst → **kein kompiliertes libobs nötig**, nur Header.
-- Baut ein `obs-2me.plugin`-Bundle, signiert es ad-hoc (`codesign -s -`) und
+- Baut ein `multi-me.plugin`-Bundle, signiert es ad-hoc (`codesign -s -`) und
   kopiert es nach `~/Library/Application Support/obs-studio/plugins/`.
 
 ## Voraussetzungen (einmalig)
@@ -35,7 +35,7 @@ Releases genutzt.
 ./dev/build.sh
 ```
 
-Danach OBS starten und im Log nach `[obs-2me] 2ME plugin loaded successfully` suchen
+Danach OBS starten und im Log nach `[multi-me] Multi-M/E plugin loaded successfully` suchen
 (Hilfe › Logdateien › Aktuelles Log anzeigen).
 
 ## Grenzen

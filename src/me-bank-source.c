@@ -1,5 +1,5 @@
 /*
-2ME — Second Mix/Effects for OBS
+Multi-M/E — Multiple Mix/Effects for OBS
 Copyright (C) 2026 Paul Loth <paulloth2208@gmail.com>
 
 This program is free software; you can redistribute it and/or modify
@@ -28,6 +28,7 @@ the Free Software Foundation; either version 2 of the License, or
 #include <string.h>
 
 #include "me-bank.h"
+#include "me-scenes.h"
 
 struct me_bank {
 	obs_source_t *source;     /* unsere eigene Quelle (Parent)            */
@@ -84,7 +85,7 @@ static void bank_apply_transition_kind(struct me_bank *b, const char *kind)
 	if (b->transition && b->transition_kind && strcmp(b->transition_kind, kind) == 0)
 		return;
 
-	obs_source_t *new_tr = obs_source_create_private(kind, "2me transition", NULL);
+	obs_source_t *new_tr = obs_source_create_private(kind, "multi-me transition", NULL);
 	if (!new_tr)
 		return;
 
@@ -185,6 +186,27 @@ static void me_bank_proc_set_preview(void *data, calldata_t *cd)
 	obs_data_release(s);
 }
 
+/* Program-Bus: gewählte Szene SOFORT auf Program (harter Schnitt). */
+static void me_bank_proc_set_program(void *data, calldata_t *cd)
+{
+	struct me_bank *b = data;
+	const char *scene = calldata_string(cd, "scene");
+	obs_source_t *pgm = (scene && *scene) ? obs_get_source_by_name(scene) : NULL;
+
+	pthread_mutex_lock(&b->mutex);
+	set_weak_by_name(&b->pgm, scene);
+	b->in_transition = false;
+	pthread_mutex_unlock(&b->mutex);
+
+	if (pgm) {
+		obs_transition_set(b->transition, pgm); /* außerhalb des Locks (Reentrancy) */
+		obs_source_release(pgm);
+	}
+	obs_data_t *s = obs_source_get_settings(b->source);
+	obs_data_set_string(s, "pgm_scene", scene ? scene : "");
+	obs_data_release(s);
+}
+
 static void me_bank_proc_set_transition(void *data, calldata_t *cd)
 {
 	struct me_bank *b = data;
@@ -266,7 +288,7 @@ static bool me_bank_auto_clicked(obs_properties_t *props, obs_property_t *proper
 static const char *me_bank_get_name(void *unused)
 {
 	UNUSED_PARAMETER(unused);
-	return "2ME \xe2\x80\x94 Mix/Effects (Re-entry)";
+	return "Multi-M/E \xe2\x80\x94 Mix/Effects (Re-entry)";
 }
 
 static void me_bank_defaults(obs_data_t *settings)
@@ -319,15 +341,16 @@ static void *me_bank_create(obs_data_t *settings, obs_source_t *source)
 		b->cy = 1080;
 	}
 
-	b->cut_hotkey = obs_hotkey_register_source(source, "2me.cut", "2ME: Cut (PVW -> PGM)",
+	b->cut_hotkey = obs_hotkey_register_source(source, "multime.cut", "Multi-M/E: Cut (PVW -> PGM)",
 						   me_bank_hotkey_cut, b);
-	b->auto_hotkey = obs_hotkey_register_source(source, "2me.auto", "2ME: Auto/Take (PVW -> PGM)",
+	b->auto_hotkey = obs_hotkey_register_source(source, "multime.auto", "Multi-M/E: Auto/Take (PVW -> PGM)",
 						    me_bank_hotkey_auto, b);
 
 	proc_handler_t *ph = obs_source_get_proc_handler(source);
 	proc_handler_add(ph, "void cut()", me_bank_proc_cut, b);
 	proc_handler_add(ph, "void auto_take()", me_bank_proc_auto, b);
 	proc_handler_add(ph, "void set_preview(in string scene)", me_bank_proc_set_preview, b);
+	proc_handler_add(ph, "void set_program(in string scene)", me_bank_proc_set_program, b);
 	proc_handler_add(ph, "void set_transition(in string kind)", me_bank_proc_set_transition, b);
 	proc_handler_add(ph, "void set_duration(in int ms)", me_bank_proc_set_duration, b);
 	proc_handler_add(ph,
@@ -431,27 +454,25 @@ static void me_bank_enum_sources(void *data, obs_source_enum_proc_t cb, void *pa
 
 /* ----------------------------------------------------- Quelle: Properties -- */
 
-static bool add_scene_to_list(void *param, obs_source_t *src)
+static bool add_scene_to_list(void *param, const char *name, obs_source_t *scene)
 {
-	if (obs_source_get_type(src) == OBS_SOURCE_TYPE_SCENE) {
-		obs_property_t *list = param;
-		const char *name = obs_source_get_name(src);
-		if (name)
-			obs_property_list_add_string(list, name, name);
-	}
+	UNUSED_PARAMETER(scene);
+	obs_property_list_add_string((obs_property_t *)param, name, name);
 	return true;
 }
 
 static obs_properties_t *me_bank_get_properties(void *data)
 {
+	struct me_bank *b = data;
+	const char *uuid = b ? obs_source_get_uuid(b->source) : NULL;
 	obs_properties_t *props = obs_properties_create();
 
 	obs_property_t *pgm = obs_properties_add_list(props, "pgm_scene", "Program-Szene (PGM)",
 						      OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 	obs_property_t *pvw = obs_properties_add_list(props, "pvw_scene", "Preview-Szene (PVW)",
 						      OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
-	obs_enum_scenes(add_scene_to_list, pgm);
-	obs_enum_scenes(add_scene_to_list, pvw);
+	me_scenes_enum(uuid, add_scene_to_list, pgm);
+	me_scenes_enum(uuid, add_scene_to_list, pvw);
 
 	obs_property_t *tk = obs_properties_add_list(props, "transition_kind", "Auto-Übergang",
 						     OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
@@ -467,8 +488,8 @@ static obs_properties_t *me_bank_get_properties(void *data)
 
 	obs_properties_add_text(props, "_hint",
 				"Alternativ per Hotkey (Einstellungen → Hotkeys): "
-				"\"2ME: Cut\" / \"2ME: Auto/Take\". "
-				"Die \"Sichtbar/Anzeigen\"-Hotkeys sind OBS-Standard und NICHT 2ME.",
+				"\"Multi-M/E: Cut\" / \"Multi-M/E: Auto/Take\". "
+				"Die \"Sichtbar/Anzeigen\"-Hotkeys sind OBS-Standard und NICHT Multi-M/E.",
 				OBS_TEXT_INFO);
 	return props;
 }
@@ -476,7 +497,7 @@ static obs_properties_t *me_bank_get_properties(void *data)
 /* ----------------------------------------------------- Registrierung ------- */
 
 static struct obs_source_info me_bank_info = {
-	.id = "2me_bank_output",
+	.id = "multi_me_bank",
 	.type = OBS_SOURCE_TYPE_INPUT,
 	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW,
 	.get_name = me_bank_get_name,
