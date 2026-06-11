@@ -124,8 +124,10 @@ struct DockCtx {
 	QLabel *pvwLabel = nullptr;
 	QComboBox *transCombo = nullptr;
 	QSpinBox *durSpin = nullptr;
+	QPushButton *recBtn = nullptr;
 	QString sceneSig;
 	QString lastPvw;
+	int lastRec = -1; /* -1 = noch nicht gesetzt, 0/1 = Aufnahme aus/an */
 	bool updatingControls = false;
 };
 
@@ -258,6 +260,7 @@ static void dock_tick(DockCtx *ctx)
 	}
 
 	QString pgmN, pvwN;
+	int rec = 0;
 	obs_source_t *bank = dock_bank(ctx);
 	if (bank) {
 		calldata_t cd;
@@ -269,8 +272,16 @@ static void dock_tick(DockCtx *ctx)
 			pgmN = QString::fromUtf8(pgm);
 		if (pvw && *pvw)
 			pvwN = QString::fromUtf8(pvw);
+		rec = calldata_bool(&cd, "recording") ? 1 : 0;
 		calldata_free(&cd);
 		obs_source_release(bank);
+	}
+
+	if (ctx->recBtn && rec != ctx->lastRec) {
+		ctx->lastRec = rec;
+		ctx->recBtn->setText(rec ? QStringLiteral("■ STOP REC") : QStringLiteral("● REC"));
+		ctx->recBtn->setStyleSheet(rec ? QStringLiteral("background:#c0392b; color:white; font-weight:bold;")
+					       : QString());
 	}
 
 	ctx->pgmLabel->setText(QStringLiteral("PGM: ") + (pgmN.isEmpty() ? QStringLiteral("–") : pgmN));
@@ -416,9 +427,15 @@ static DockCtx *build_bank_dock(const QString &uuid, const QString &name)
 	btnRow->addWidget(autoBtn);
 	outer->addLayout(btnRow);
 
+	/* Aufnahme (eigener Datei-Output dieser Bank) */
+	ctx->recBtn = new QPushButton(QStringLiteral("● REC"));
+	ctx->recBtn->setMinimumHeight(28);
+	outer->addWidget(ctx->recBtn);
+
 	/* Verdrahtung */
 	QObject::connect(cutBtn, &QPushButton::clicked, [ctx]() { dock_call(ctx, "cut"); });
 	QObject::connect(autoBtn, &QPushButton::clicked, [ctx]() { dock_call(ctx, "auto_take"); });
+	QObject::connect(ctx->recBtn, &QPushButton::clicked, [ctx]() { dock_call(ctx, "toggle_record"); });
 	QObject::connect(ctx->transCombo, &QComboBox::currentIndexChanged, [ctx](int) {
 		if (!ctx->updatingControls)
 			dock_proc_string(ctx, "set_transition", "kind", ctx->transCombo->currentData().toString());

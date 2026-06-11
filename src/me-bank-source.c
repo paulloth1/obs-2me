@@ -30,6 +30,7 @@ the Free Software Foundation; either version 2 of the License, or
 
 #include "me-bank.h"
 #include "me-scenes.h"
+#include "me-output.h"
 
 struct me_bank;
 
@@ -56,6 +57,8 @@ struct me_bank {
 	obs_hotkey_id auto_hotkey;
 	obs_hotkey_id pvw_hotkeys[ME_PVW_SLOTS]; /* "Preview Input 1..N"      */
 	struct me_pvw_slot pvw_slots[ME_PVW_SLOTS];
+
+	me_output_t *output; /* eigener Datei-Output dieser Bank             */
 };
 
 /* ---------------------------------------------------------------- Helpers -- */
@@ -273,6 +276,31 @@ static void me_bank_proc_set_duration(void *data, calldata_t *cd)
 	obs_data_release(s);
 }
 
+static void me_bank_proc_start_record(void *data, calldata_t *cd)
+{
+	struct me_bank *b = data;
+	bool ok = me_output_start(b->output);
+	calldata_set_bool(cd, "recording", me_output_active(b->output));
+	calldata_set_bool(cd, "ok", ok);
+}
+
+static void me_bank_proc_stop_record(void *data, calldata_t *cd)
+{
+	struct me_bank *b = data;
+	me_output_stop(b->output);
+	calldata_set_bool(cd, "recording", me_output_active(b->output));
+}
+
+static void me_bank_proc_toggle_record(void *data, calldata_t *cd)
+{
+	struct me_bank *b = data;
+	if (me_output_active(b->output))
+		me_output_stop(b->output);
+	else
+		me_output_start(b->output);
+	calldata_set_bool(cd, "recording", me_output_active(b->output));
+}
+
 static void me_bank_proc_get_state(void *data, calldata_t *cd)
 {
 	struct me_bank *b = data;
@@ -286,6 +314,8 @@ static void me_bank_proc_get_state(void *data, calldata_t *cd)
 	calldata_set_bool(cd, "in_transition", intr);
 	calldata_set_string(cd, "kind", b->transition_kind ? b->transition_kind : "fade_transition");
 	calldata_set_int(cd, "duration", (long long)b->duration_ms);
+	calldata_set_bool(cd, "recording", me_output_active(b->output));
+	calldata_set_string(cd, "rec_file", me_output_path(b->output));
 	obs_source_release(pgm);
 	obs_source_release(pvw);
 }
@@ -347,6 +377,7 @@ static void me_bank_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_string(settings, "transition_kind", "fade_transition");
 	obs_data_set_default_int(settings, "duration_ms", 300);
+	me_output_get_defaults(settings);
 }
 
 static void me_bank_update(void *data, obs_data_t *settings)
@@ -455,10 +486,15 @@ static void *me_bank_create(obs_data_t *settings, obs_source_t *source)
 	proc_handler_add(ph, "void set_program(in string scene)", me_bank_proc_set_program, b);
 	proc_handler_add(ph, "void set_transition(in string kind)", me_bank_proc_set_transition, b);
 	proc_handler_add(ph, "void set_duration(in int ms)", me_bank_proc_set_duration, b);
+	proc_handler_add(ph, "void start_record(out bool recording, out bool ok)", me_bank_proc_start_record, b);
+	proc_handler_add(ph, "void stop_record(out bool recording)", me_bank_proc_stop_record, b);
+	proc_handler_add(ph, "void toggle_record(out bool recording)", me_bank_proc_toggle_record, b);
 	proc_handler_add(
 		ph,
-		"void get_state(out string program, out string preview, out bool in_transition, out string kind, out int duration)",
+		"void get_state(out string program, out string preview, out bool in_transition, out string kind, out int duration, out bool recording, out string rec_file)",
 		me_bank_proc_get_state, b);
+
+	b->output = me_output_create(source);
 
 	me_bank_update(b, settings);
 	return b;
@@ -474,6 +510,7 @@ static void me_bank_destroy(void *data)
 	for (int i = 0; i < ME_PVW_SLOTS; i++)
 		if (b->pvw_hotkeys[i] != OBS_INVALID_HOTKEY_ID)
 			obs_hotkey_unregister(b->pvw_hotkeys[i]);
+	me_output_destroy(b->output); /* stoppt eine laufende Aufnahme */
 	if (b->transition) {
 		signal_handler_disconnect(obs_source_get_signal_handler(b->transition), "transition_stop",
 					  me_bank_transition_stopped, b);
@@ -587,6 +624,10 @@ static obs_properties_t *me_bank_get_properties(void *data)
 	obs_property_list_add_string(tk, "Slide", "slide_transition");
 
 	obs_properties_add_int(props, "duration_ms", "Übergangsdauer (ms)", 0, 10000, 50);
+
+	/* Eigener Datei-Output dieser Bank (Encoder/Bitrate/Ordner/Container).
+	 * Start/Stopp über das Dock bzw. WebSocket, nicht hier. */
+	me_output_add_properties(props);
 
 	/* Direkt testbar: Buttons lösen den Take live aus (priv = diese Bank). */
 	obs_properties_add_button2(props, "cut_btn", "CUT (sofort)", me_bank_cut_clicked, data);

@@ -61,7 +61,14 @@ endif()
 
 target_sources(
   ${CMAKE_PROJECT_NAME}
-  PRIVATE src/plugin-main.c src/me-bank-source.c src/me-scenes.c src/me-websocket.c src/me-dock.cpp src/me-multiview.cpp
+  PRIVATE
+    src/plugin-main.c
+    src/me-bank-source.c
+    src/me-scenes.c
+    src/me-output.c
+    src/me-websocket.c
+    src/me-dock.cpp
+    src/me-multiview.cpp
 )
 
 set_target_properties_plugin(${CMAKE_PROJECT_NAME} PROPERTIES OUTPUT_NAME ${_name})

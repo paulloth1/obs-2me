@@ -72,6 +72,7 @@ add_library(
   "${CMAKE_CURRENT_SOURCE_DIR}/../src/plugin-main.c"
   "${CMAKE_CURRENT_SOURCE_DIR}/../src/me-bank-source.c"
   "${CMAKE_CURRENT_SOURCE_DIR}/../src/me-scenes.c"
+  "${CMAKE_CURRENT_SOURCE_DIR}/../src/me-output.c"
   "${CMAKE_CURRENT_SOURCE_DIR}/../src/me-websocket.c"
   "${CMAKE_CURRENT_SOURCE_DIR}/../src/me-dock.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/../src/me-multiview.cpp"

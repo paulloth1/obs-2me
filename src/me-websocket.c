@@ -23,7 +23,10 @@ the Free Software Foundation; either version 2 of the License, or
  *   get_banks    { }                 -> Liste aller Bänke
  *                                       [{name, uuid, hotkey_cut, hotkey_auto,
  *                                         hotkeys_preview:[{input, hotkey}]}]
- *   get_state    { bank }            -> { program, preview, in_transition, kind, duration }
+ *   get_state    { bank }            -> { program, preview, in_transition, kind,
+ *                                         duration, recording, rec_file }
+ *   start_record { bank }            -> Datei-Aufnahme dieser Bank starten
+ *   stop_record  { bank }            -> Datei-Aufnahme dieser Bank stoppen
  *
  * "bank" akzeptiert UUID oder Quellname.
  *
@@ -174,6 +177,40 @@ static void req_auto(obs_data_t *req, obs_data_t *res, void *priv)
 	obs_source_release(b);
 }
 
+static void req_start_record(obs_data_t *req, obs_data_t *res, void *priv)
+{
+	UNUSED_PARAMETER(priv);
+	obs_source_t *b = resolve_bank(req);
+	if (!b) {
+		fail(res, "bank not found");
+		return;
+	}
+	calldata_t cd;
+	calldata_init(&cd);
+	proc_handler_call(obs_source_get_proc_handler(b), "start_record", &cd);
+	obs_data_set_bool(res, "recording", calldata_bool(&cd, "recording"));
+	obs_data_set_bool(res, "success", true);
+	calldata_free(&cd);
+	obs_source_release(b);
+}
+
+static void req_stop_record(obs_data_t *req, obs_data_t *res, void *priv)
+{
+	UNUSED_PARAMETER(priv);
+	obs_source_t *b = resolve_bank(req);
+	if (!b) {
+		fail(res, "bank not found");
+		return;
+	}
+	calldata_t cd;
+	calldata_init(&cd);
+	proc_handler_call(obs_source_get_proc_handler(b), "stop_record", &cd);
+	obs_data_set_bool(res, "recording", calldata_bool(&cd, "recording"));
+	obs_data_set_bool(res, "success", true);
+	calldata_free(&cd);
+	obs_source_release(b);
+}
+
 static bool enum_banks_cb(void *param, obs_source_t *src)
 {
 	if (strcmp(obs_source_get_id(src), "multi_me_bank") == 0) {
@@ -238,6 +275,8 @@ static void req_get_state(obs_data_t *req, obs_data_t *res, void *priv)
 	obs_data_set_bool(res, "in_transition", calldata_bool(&cd, "in_transition"));
 	obs_data_set_string(res, "kind", calldata_string(&cd, "kind"));
 	obs_data_set_int(res, "duration", calldata_int(&cd, "duration"));
+	obs_data_set_bool(res, "recording", calldata_bool(&cd, "recording"));
+	obs_data_set_string(res, "rec_file", calldata_string(&cd, "rec_file"));
 	calldata_free(&cd);
 	obs_data_set_bool(res, "success", true);
 	obs_source_release(b);
@@ -263,5 +302,7 @@ void me_websocket_register(void)
 	ws_register_request(ph, vendor, "auto", req_auto);
 	ws_register_request(ph, vendor, "get_banks", req_get_banks);
 	ws_register_request(ph, vendor, "get_state", req_get_state);
-	obs_log(LOG_INFO, "obs-websocket vendor 'multi-me' registered (6 requests)");
+	ws_register_request(ph, vendor, "start_record", req_start_record);
+	ws_register_request(ph, vendor, "stop_record", req_stop_record);
+	obs_log(LOG_INFO, "obs-websocket vendor 'multi-me' registered (8 requests)");
 }
