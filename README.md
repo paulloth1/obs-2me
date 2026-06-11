@@ -60,8 +60,6 @@ Unpack the package contents into `~/.config/obs-studio/plugins/multi-me/`
 3. Click a scene in the **preview bus** (= PVW), then **CUT** or **AUTO** — the bank output
    (the re-entry source in your main scene) switches accordingly.
 
-> ⚠️ Do **not** put PGM/PVW on the scene that contains the Multi-M/E source itself → feedback loop.
-
 ### Control via obs-websocket / Bitfocus Companion
 
 Enable obs-websocket (**Tools → WebSocket Server Settings**). The banks are controlled through
@@ -93,6 +91,14 @@ via **Trigger Hotkey by ID** (CUT/AUTO/"Preview Input 1…12").
 - **No separate audio mix** (by design): audio keeps running through the normal OBS mixer.
   (The per-bank file recording does include the OBS main audio track.)
 - **Tested** primarily on **macOS**; Windows/Linux are built but exercised less thoroughly.
+
+In my Testing it could handle:
+1080p Project 25fps Project
+- 8 1080p Videos Playing
+- 5 M/E (4x The Plugin)
+- All Recording with the HEVC Hardware Encoder at 6000mpbs CBR.
+- Companion triggering Auto every 2 Seconds with Different effects and Inputs on all Channels.
+- It couldn't quite handle 50p with all 5 Channels on my M1 Pro Macbook Pro
 
 ## Building from source
 
