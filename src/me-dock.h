@@ -1,8 +1,8 @@
 /*
 Multi-M/E — Multiple Mix/Effects for OBS
-Copyright (C) 2026 Paul Loth <paulloth2208@gmail.com>
+Copyright (C) 2026 Paul Loth <mail@paulloth.de>
 
-GPL v2+ (siehe plugin-main.c).
+GPL v2+ (see plugin-main.c).
 */
 
 #pragma once
@@ -11,8 +11,8 @@ GPL v2+ (siehe plugin-main.c).
 extern "C" {
 #endif
 
-/* Registriert das Multi-M/E-Dock im OBS-Frontend. Aus obs_module_post_load() aufrufen
- * (Frontend + Qt-Hauptthread sind dann bereit). */
+/* Registers the Multi-M/E dock in the OBS frontend. Call from
+ * obs_module_post_load() (frontend + Qt main thread are ready by then). */
 void me_dock_register(void);
 
 #ifdef __cplusplus

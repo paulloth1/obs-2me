@@ -1,6 +1,6 @@
 /*
 Multi-M/E — Multiple Mix/Effects for OBS
-Copyright (C) 2026 Paul Loth <paulloth2208@gmail.com>
+Copyright (C) 2026 Paul Loth <mail@paulloth.de>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@ bool obs_module_load(void)
 	return true;
 }
 
-/* Dock erst nach dem Laden registrieren: Frontend + Qt-Hauptthread sind bereit. */
+/* Register the dock only after loading: frontend + Qt main thread are ready. */
 void obs_module_post_load(void)
 {
 	me_dock_register();

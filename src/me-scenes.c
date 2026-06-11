@@ -1,6 +1,6 @@
 /*
 Multi-M/E — Multiple Mix/Effects for OBS
-Copyright (C) 2026 Paul Loth <paulloth2208@gmail.com>
+Copyright (C) 2026 Paul Loth <mail@paulloth.de>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@ void me_scenes_enum(const char *exclude_bank_uuid, me_scene_cb cb, void *param)
 	for (size_t i = 0; i < scenes.sources.num; i++) {
 		obs_source_t *scene = scenes.sources.array[i];
 
-		/* Native OBS-Multiview-Ausschluss respektieren */
+		/* Respect the native OBS multiview exclusion */
 		obs_data_t *pd = obs_source_get_private_settings(scene);
 		obs_data_set_default_bool(pd, "show_in_multiview", true);
 		bool show = obs_data_get_bool(pd, "show_in_multiview");
@@ -52,7 +52,7 @@ void me_scenes_enum(const char *exclude_bank_uuid, me_scene_cb cb, void *param)
 		if (!show)
 			continue;
 
-		/* Feedback-Schutz: Szenen, die die eigene Bank-Quelle enthalten */
+		/* Feedback protection: scenes that contain the bank's own source */
 		if (bank && scene_contains(scene, bank))
 			continue;
 

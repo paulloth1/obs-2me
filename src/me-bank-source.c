@@ -1,6 +1,6 @@
 /*
 Multi-M/E — Multiple Mix/Effects for OBS
-Copyright (C) 2026 Paul Loth <paulloth2208@gmail.com>
+Copyright (C) 2026 Paul Loth <mail@paulloth.de>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -9,22 +9,22 @@ the Free Software Foundation; either version 2 of the License, or
 */
 
 /*
- * me-bank-source.c — Eine M/E-Mischebene ("Bank") als OBS-Quelltyp.
+ * me-bank-source.c — one M/E layer ("bank") as an OBS source type.
  *
- * Jede Instanz dieser Quelle ist eine eigenständige Mischebene mit eigenem
- * Program-/Preview-Bus und eigener Übergangslogik (Cut / Auto-Fade). Intern
- * hält die Bank eine private Transition-Source (den A/B-Mischer). Der Ausgang
- * dieser Quelle ist das gemischte Bild und kann wie jede Quelle in Hauptszenen
- * platziert werden ("Re-entry").
+ * Each instance of this source is a self-contained mixing layer with its own
+ * program/preview bus and transition logic (Cut / Auto-Fade). Internally the
+ * bank holds a private transition source (the A/B mixer). The output of this
+ * source is the mixed picture and can be placed in main scenes like any other
+ * source ("re-entry").
  *
- * Bus-Quellen sind OBS-Szenen (per Properties wählbar). Geschaltet wird per
- * OBS-Hotkeys (Cut / Auto). Audio: bewusst keins (video-only) — Audio-Routing
- * bleibt im normalen OBS-Mixer.
+ * Bus sources are OBS scenes (selectable via properties). Switching happens via
+ * OBS hotkeys (Cut / Auto). Audio: deliberately none (video-only) — audio
+ * routing stays in the normal OBS mixer.
  */
 
 #include <obs-module.h>
 #include <util/platform.h>
-#include <util/threading.h> /* portables pthread_mutex_* (auch Windows) */
+#include <util/threading.h> /* portable pthread_mutex_* (also on Windows) */
 #include <string.h>
 #include <stdio.h> /* snprintf */
 
@@ -34,36 +34,36 @@ the Free Software Foundation; either version 2 of the License, or
 
 struct me_bank;
 
-/* Callback-Kontext eines Preview-Slot-Hotkeys (stabil in der Bank gespeichert). */
+/* Callback context of a preview-slot hotkey (stored stably inside the bank). */
 struct me_pvw_slot {
 	struct me_bank *bank;
-	int index; /* 0-basiert: schaltet die (index+1)-te Bus-Szene in PVW */
+	int index; /* 0-based: switches the (index+1)-th bus scene to PVW */
 };
 
 struct me_bank {
-	obs_source_t *source;     /* unsere eigene Quelle (Parent)            */
-	obs_source_t *transition; /* privater A/B-Mischer                     */
-	char *transition_kind;    /* aktueller Transition-Typ (z. B. fade_…)  */
-	uint32_t cx, cy;          /* Ausgabegröße (= Haupt-Canvas)            */
-	uint32_t duration_ms;     /* Auto-Übergangsdauer                      */
+	obs_source_t *source;     /* our own source (parent)                  */
+	obs_source_t *transition; /* private A/B mixer                        */
+	char *transition_kind;    /* current transition type (e.g. fade_…)    */
+	uint32_t cx, cy;          /* output size (= main canvas)              */
+	uint32_t duration_ms;     /* auto transition duration                 */
 
-	pthread_mutex_t mutex;  /* schützt pgm/pvw/in_transition            */
-	obs_weak_source_t *pgm; /* aktuell auf Program                      */
-	obs_weak_source_t *pvw; /* aktuell auf Preview                      */
+	pthread_mutex_t mutex;  /* protects pgm/pvw/in_transition           */
+	obs_weak_source_t *pgm; /* currently on program                     */
+	obs_weak_source_t *pvw; /* currently on preview                     */
 	bool in_transition;
-	uint64_t transition_end_ns; /* Wall-Clock-Ende des Auto-Übergangs     */
+	uint64_t transition_end_ns; /* wall-clock end of the auto transition  */
 
 	obs_hotkey_id cut_hotkey;
 	obs_hotkey_id auto_hotkey;
 	obs_hotkey_id pvw_hotkeys[ME_PVW_SLOTS]; /* "Preview Input 1..N"      */
 	struct me_pvw_slot pvw_slots[ME_PVW_SLOTS];
 
-	me_output_t *output; /* eigener Datei-Output dieser Bank             */
+	me_output_t *output; /* this bank's own file output                  */
 };
 
 /* ---------------------------------------------------------------- Helpers -- */
 
-/* Szene per Name auflösen und als Weak-Ref in *slot ablegen. */
+/* Resolve a scene by name and store it as a weak ref in *slot. */
 static void set_weak_by_name(obs_weak_source_t **slot, const char *name)
 {
 	obs_weak_source_release(*slot);
@@ -77,10 +77,10 @@ static void set_weak_by_name(obs_weak_source_t **slot, const char *name)
 	}
 }
 
-/* -------------------------------------------------------------- Take-Logik - */
+/* -------------------------------------------------------------- Take logic - */
 
-/* Auto-Übergang fertig: nur das in_transition-Flag löschen
- * (der Bus-Swap passiert bereits beim Auslösen des Takes). */
+/* Auto transition finished: only clear the in_transition flag
+ * (the bus swap already happened when the take was triggered). */
 static void me_bank_transition_stopped(void *data, calldata_t *cd)
 {
 	struct me_bank *b = data;
@@ -90,8 +90,8 @@ static void me_bank_transition_stopped(void *data, calldata_t *cd)
 	pthread_mutex_unlock(&b->mutex);
 }
 
-/* Transition-Source vom gewünschten Typ sicherstellen (neu erzeugen, falls Typ
- * gewechselt). Überträgt Aktiv-/Sichtbar-Zustand und zeigt aktuelles PGM. */
+/* Ensure a transition source of the requested type (recreate it if the type
+ * changed). Carries over the active/showing state and shows the current PGM. */
 static void bank_apply_transition_kind(struct me_bank *b, const char *kind)
 {
 	if (!kind || !*kind)
@@ -127,13 +127,13 @@ static void bank_apply_transition_kind(struct me_bank *b, const char *kind)
 	b->transition_kind = bstrdup(kind);
 }
 
-/* CUT: PVW sofort auf PGM. */
+/* CUT: PVW straight to PGM. */
 static void bank_cut(struct me_bank *b)
 {
 	pthread_mutex_lock(&b->mutex);
 	obs_source_t *dest = obs_weak_source_get_source(b->pvw);
 	if (dest) {
-		obs_weak_source_t *tmp = b->pgm; /* PVW wird neues PGM */
+		obs_weak_source_t *tmp = b->pgm; /* PVW becomes the new PGM */
 		b->pgm = b->pvw;
 		b->pvw = tmp;
 		b->in_transition = false;
@@ -146,7 +146,7 @@ static void bank_cut(struct me_bank *b)
 	}
 }
 
-/* AUTO/Take: zeitgesteuerter Übergang PVW -> PGM. */
+/* AUTO/Take: timed transition PVW -> PGM. */
 static void bank_auto(struct me_bank *b)
 {
 	pthread_mutex_lock(&b->mutex);
@@ -154,7 +154,7 @@ static void bank_auto(struct me_bank *b)
 	if (!b->in_transition) {
 		dest = obs_weak_source_get_source(b->pvw);
 		if (dest) {
-			obs_weak_source_t *tmp = b->pgm; /* PVW wird neues PGM */
+			obs_weak_source_t *tmp = b->pgm; /* PVW becomes the new PGM */
 			b->pgm = b->pvw;
 			b->pvw = tmp;
 			b->in_transition = true;
@@ -163,15 +163,15 @@ static void bank_auto(struct me_bank *b)
 	}
 	pthread_mutex_unlock(&b->mutex);
 
-	/* obs_transition_start außerhalb des Locks aufrufen: bei 0 ms feuert
-	 * "transition_stop" synchron -> würde sonst den Mutex doppelt nehmen. */
+	/* Call obs_transition_start outside the lock: at 0 ms "transition_stop"
+	 * fires synchronously -> would otherwise take the mutex twice. */
 	if (dest) {
 		obs_transition_start(b->transition, OBS_TRANSITION_MODE_AUTO, b->duration_ms, dest);
 		obs_source_release(dest);
 	}
 }
 
-/* ---- Proc-Handler-Schnittstelle (Brücke zum Qt-Dock) ---- */
+/* ---- Proc-handler interface (bridge to the Qt dock) ---- */
 static void me_bank_proc_cut(void *data, calldata_t *cd)
 {
 	UNUSED_PARAMETER(cd);
@@ -184,19 +184,19 @@ static void me_bank_proc_auto(void *data, calldata_t *cd)
 	bank_auto((struct me_bank *)data);
 }
 
-/* PVW auf eine Szene setzen (per Name) + in den Settings persistieren. */
+/* Set PVW to a scene (by name) + persist it in the settings. */
 static void bank_set_preview(struct me_bank *b, const char *scene)
 {
 	pthread_mutex_lock(&b->mutex);
 	set_weak_by_name(&b->pvw, scene);
 	pthread_mutex_unlock(&b->mutex);
-	/* in den Settings persistieren (überlebt Reload), ohne update() auszulösen */
+	/* persist in the settings (survives reload), without triggering update() */
 	obs_data_t *s = obs_source_get_settings(b->source);
 	obs_data_set_string(s, "pvw_scene", scene ? scene : "");
 	obs_data_release(s);
 }
 
-/* Die index-te Szene (0-basiert) der gefilterten Bus-Liste finden. */
+/* Find the index-th scene (0-based) of the filtered bus list. */
 struct me_pick_scene {
 	int target;
 	int cur;
@@ -211,13 +211,13 @@ static bool me_pick_scene_cb(void *param, const char *name, obs_source_t *scene)
 	if (pk->cur == pk->target) {
 		snprintf(pk->name, sizeof(pk->name), "%s", name ? name : "");
 		pk->found = true;
-		return false; /* fertig */
+		return false; /* done */
 	}
 	pk->cur++;
 	return true;
 }
 
-/* PVW auf die (index+1)-te Bus-Szene setzen (für die Preview-Slot-Hotkeys). */
+/* Set PVW to the (index+1)-th bus scene (for the preview-slot hotkeys). */
 static void bank_set_preview_by_index(struct me_bank *b, int index)
 {
 	struct me_pick_scene pk = {.target = index, .cur = 0, .found = false};
@@ -231,7 +231,7 @@ static void me_bank_proc_set_preview(void *data, calldata_t *cd)
 	bank_set_preview((struct me_bank *)data, calldata_string(cd, "scene"));
 }
 
-/* Program-Bus: gewählte Szene SOFORT auf Program (harter Schnitt). */
+/* Program bus: put the chosen scene IMMEDIATELY on program (hard cut). */
 static void me_bank_proc_set_program(void *data, calldata_t *cd)
 {
 	struct me_bank *b = data;
@@ -244,7 +244,7 @@ static void me_bank_proc_set_program(void *data, calldata_t *cd)
 	pthread_mutex_unlock(&b->mutex);
 
 	if (pgm) {
-		obs_transition_set(b->transition, pgm); /* außerhalb des Locks (Reentrancy) */
+		obs_transition_set(b->transition, pgm); /* outside the lock (reentrancy) */
 		obs_source_release(pgm);
 	}
 	obs_data_t *s = obs_source_get_settings(b->source);
@@ -336,7 +336,7 @@ static void me_bank_hotkey_auto(void *data, obs_hotkey_id id, obs_hotkey_t *hotk
 		bank_auto((struct me_bank *)data);
 }
 
-/* "Preview Input N": die N-te Bus-Szene in die Vorschau der Bank schalten. */
+/* "Preview Input N": switch the N-th bus scene into the bank's preview. */
 static void me_bank_hotkey_pvw(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey, bool pressed)
 {
 	UNUSED_PARAMETER(id);
@@ -346,7 +346,7 @@ static void me_bank_hotkey_pvw(void *data, obs_hotkey_id id, obs_hotkey_t *hotke
 		bank_set_preview_by_index(ps->bank, ps->index);
 }
 
-/* Buttons in den Eigenschaften (priv = unser me_bank via add_button2). */
+/* Buttons in the properties (priv = our me_bank via add_button2). */
 static bool me_bank_cut_clicked(obs_properties_t *props, obs_property_t *property, void *data)
 {
 	UNUSED_PARAMETER(props);
@@ -365,7 +365,7 @@ static bool me_bank_auto_clicked(obs_properties_t *props, obs_property_t *proper
 	return false;
 }
 
-/* ----------------------------------------------------- Quelle: Lebenszyklus - */
+/* ------------------------------------------------------ Source: lifecycle - */
 
 static const char *me_bank_get_name(void *unused)
 {
@@ -398,7 +398,7 @@ static void me_bank_update(void *data, obs_data_t *settings)
 	bank_apply_transition_kind(b, kind);
 
 	if (!in_tr) {
-		/* aktuelle PGM-Szene anzeigen (z. B. nach Szenenwechsel) */
+		/* show the current PGM scene (e.g. after a scene change) */
 		obs_source_t *pgm = obs_weak_source_get_source(b->pgm);
 		if (pgm) {
 			obs_transition_set(b->transition, pgm);
@@ -407,9 +407,9 @@ static void me_bank_update(void *data, obs_data_t *settings)
 	}
 }
 
-/* Vor dem Speichern: aktuellen Live-Zustand (PGM/PVW nach Cuts/Takes, Typ, Dauer)
- * in die Settings schreiben — die Weak-Refs ändern sich bei Cut/Auto, ohne dass
- * die Settings angefasst werden, sonst ginge der zuletzt geschaltete Stand verloren. */
+/* Before saving: write the current live state (PGM/PVW after cuts/takes, type,
+ * duration) into the settings — the weak refs change on cut/auto without the
+ * settings being touched, otherwise the last switched state would be lost. */
 static void me_bank_save(void *data, obs_data_t *settings)
 {
 	struct me_bank *b = data;
@@ -427,9 +427,9 @@ static void me_bank_save(void *data, obs_data_t *settings)
 	obs_source_release(pvw);
 }
 
-/* Nach dem Laden ALLER Quellen aufgerufen (zweiter Pass) — jetzt existieren die
- * referenzierten Szenen, daher PGM/PVW hier (statt beim Erzeugen) auflösen. Behebt
- * leere Bänke nach OBS-Neustart / Scene-Collection-Wechsel (Lade-Reihenfolge). */
+/* Called after ALL sources have loaded (second pass) — the referenced scenes
+ * now exist, so resolve PGM/PVW here (instead of at create time). Fixes empty
+ * banks after an OBS restart / scene-collection switch (load order). */
 static void me_bank_load(void *data, obs_data_t *settings)
 {
 	me_bank_update(data, settings);
@@ -454,11 +454,11 @@ static void *me_bank_create(obs_data_t *settings, obs_source_t *source)
 		b->cy = 1080;
 	}
 
-	/* Hotkey-NAME pro Bank eindeutig machen (UUID-Suffix), damit obs-websocket /
-	 * Companion "Trigger Hotkey by ID" (TriggerHotkeyByName) gezielt EINE Bank
-	 * schaltet — bei gleichem Namen würde sonst immer nur die erste Bank reagieren.
-	 * Die ANZEIGE in Einstellungen→Hotkeys bleibt schön (OBS stellt den aktuellen
-	 * Quellnamen voran und nutzt die Beschreibung, nicht den Namen). */
+	/* Make the hotkey NAME unique per bank (UUID suffix) so obs-websocket /
+	 * Companion "Trigger Hotkey by ID" (TriggerHotkeyByName) targets exactly ONE
+	 * bank — with identical names only the first bank would react. The DISPLAY in
+	 * Settings -> Hotkeys stays nice (OBS prepends the current source name and
+	 * uses the description, not the name). */
 	const char *uuid = obs_source_get_uuid(source);
 	char cut_name[160], auto_name[160];
 	snprintf(cut_name, sizeof(cut_name), ME_HOTKEY_CUT_FMT, uuid ? uuid : "");
@@ -469,7 +469,7 @@ static void *me_bank_create(obs_data_t *settings, obs_source_t *source)
 	b->auto_hotkey = obs_hotkey_register_source(source, auto_name, "Multi-M/E: Auto/Take (PVW -> PGM)",
 						    me_bank_hotkey_auto, b);
 
-	/* Feste Preview-Bus-Hotkeys "Preview Input 1..N" je Bank. */
+	/* Fixed preview-bus hotkeys "Preview Input 1..N" per bank. */
 	for (int i = 0; i < ME_PVW_SLOTS; i++) {
 		b->pvw_slots[i].bank = b;
 		b->pvw_slots[i].index = i;
@@ -510,7 +510,7 @@ static void me_bank_destroy(void *data)
 	for (int i = 0; i < ME_PVW_SLOTS; i++)
 		if (b->pvw_hotkeys[i] != OBS_INVALID_HOTKEY_ID)
 			obs_hotkey_unregister(b->pvw_hotkeys[i]);
-	me_output_destroy(b->output); /* stoppt eine laufende Aufnahme */
+	me_output_destroy(b->output); /* stops a running recording */
 	if (b->transition) {
 		signal_handler_disconnect(obs_source_get_signal_handler(b->transition), "transition_stop",
 					  me_bank_transition_stopped, b);
@@ -523,7 +523,7 @@ static void me_bank_destroy(void *data)
 	bfree(b);
 }
 
-/* -------------------------------------------------- Quelle: Aktiv/Sichtbar - */
+/* ----------------------------------------------- Source: active/showing -- */
 
 static void me_bank_activate(void *data)
 {
@@ -553,11 +553,11 @@ static void me_bank_hide(void *data)
 		obs_source_dec_showing(b->transition);
 }
 
-/* ------------------------------------------------------ Quelle: Rendering -- */
+/* --------------------------------------------------------- Source: render -- */
 
-/* in_transition zeitbasiert zurücksetzen (das transition_stop-Signal feuert bei
- * video-only-Nutzung nie, weil der Audio-Teil des Übergangs nie abschließt).
- * video_tick wird von OBS jeden Frame für jede Quelle aufgerufen. */
+/* Reset in_transition time-based (the transition_stop signal never fires for
+ * video-only use, because the audio part of the transition never completes).
+ * video_tick is called by OBS every frame for every source. */
 static void me_bank_video_tick(void *data, float seconds)
 {
 	struct me_bank *b = data;
@@ -595,7 +595,7 @@ static void me_bank_enum_sources(void *data, obs_source_enum_proc_t cb, void *pa
 		cb(b->source, b->transition, param);
 }
 
-/* ----------------------------------------------------- Quelle: Properties -- */
+/* ------------------------------------------------------- Source: properties */
 
 static bool add_scene_to_list(void *param, const char *name, obs_source_t *scene)
 {
@@ -610,38 +610,38 @@ static obs_properties_t *me_bank_get_properties(void *data)
 	const char *uuid = b ? obs_source_get_uuid(b->source) : NULL;
 	obs_properties_t *props = obs_properties_create();
 
-	obs_property_t *pgm = obs_properties_add_list(props, "pgm_scene", "Program-Szene (PGM)", OBS_COMBO_TYPE_LIST,
+	obs_property_t *pgm = obs_properties_add_list(props, "pgm_scene", "Program scene (PGM)", OBS_COMBO_TYPE_LIST,
 						      OBS_COMBO_FORMAT_STRING);
-	obs_property_t *pvw = obs_properties_add_list(props, "pvw_scene", "Preview-Szene (PVW)", OBS_COMBO_TYPE_LIST,
+	obs_property_t *pvw = obs_properties_add_list(props, "pvw_scene", "Preview scene (PVW)", OBS_COMBO_TYPE_LIST,
 						      OBS_COMBO_FORMAT_STRING);
 	me_scenes_enum(uuid, add_scene_to_list, pgm);
 	me_scenes_enum(uuid, add_scene_to_list, pvw);
 
-	obs_property_t *tk = obs_properties_add_list(props, "transition_kind", "Auto-Übergang", OBS_COMBO_TYPE_LIST,
+	obs_property_t *tk = obs_properties_add_list(props, "transition_kind", "Auto transition", OBS_COMBO_TYPE_LIST,
 						     OBS_COMBO_FORMAT_STRING);
 	obs_property_list_add_string(tk, "Fade", "fade_transition");
 	obs_property_list_add_string(tk, "Swipe", "swipe_transition");
 	obs_property_list_add_string(tk, "Slide", "slide_transition");
 
-	obs_properties_add_int(props, "duration_ms", "Übergangsdauer (ms)", 0, 10000, 50);
+	obs_properties_add_int(props, "duration_ms", "Transition duration (ms)", 0, 10000, 50);
 
-	/* Eigener Datei-Output dieser Bank (Encoder/Bitrate/Ordner/Container).
-	 * Start/Stopp über das Dock bzw. WebSocket, nicht hier. */
+	/* This bank's own file output (encoder/bitrate/folder/container).
+	 * Start/stop via the dock or WebSocket, not here. */
 	me_output_add_properties(props);
 
-	/* Direkt testbar: Buttons lösen den Take live aus (priv = diese Bank). */
-	obs_properties_add_button2(props, "cut_btn", "CUT (sofort)", me_bank_cut_clicked, data);
-	obs_properties_add_button2(props, "auto_btn", "AUTO / TAKE (Übergang)", me_bank_auto_clicked, data);
+	/* Directly testable: buttons trigger the take live (priv = this bank). */
+	obs_properties_add_button2(props, "cut_btn", "CUT (immediate)", me_bank_cut_clicked, data);
+	obs_properties_add_button2(props, "auto_btn", "AUTO / TAKE (transition)", me_bank_auto_clicked, data);
 
 	obs_properties_add_text(props, "_hint",
-				"Alternativ per Hotkey (Einstellungen → Hotkeys): "
+				"Alternatively via hotkey (Settings -> Hotkeys): "
 				"\"Multi-M/E: Cut\" / \"Multi-M/E: Auto/Take\". "
-				"Die \"Sichtbar/Anzeigen\"-Hotkeys sind OBS-Standard und NICHT Multi-M/E.",
+				"The \"Show/Hide\" hotkeys are OBS defaults and NOT Multi-M/E.",
 				OBS_TEXT_INFO);
 	return props;
 }
 
-/* ----------------------------------------------------- Registrierung ------- */
+/* ----------------------------------------------------- Registration ------- */
 
 static struct obs_source_info me_bank_info = {
 	.id = "multi_me_bank",

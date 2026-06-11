@@ -1,6 +1,6 @@
 /*
 Multi-M/E — Multiple Mix/Effects for OBS
-Copyright (C) 2026 Paul Loth <paulloth2208@gmail.com>
+Copyright (C) 2026 Paul Loth <mail@paulloth.de>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -9,15 +9,14 @@ the Free Software Foundation; either version 2 of the License, or
 */
 
 /*
- * me-output.c — eigener Datei-Output je Bank (siehe me-output.h).
+ * me-output.c — this bank's own file output (see me-output.h).
  *
- * Pipeline beim Start:
- *   obs_view (Bank als Channel 0) -> obs_view_add2 (Video-Mix in Bank-Größe)
- *   -> obs_video_encoder -> ffmpeg_muxer-Output -> Datei.
- * Beim Stop wird asynchron finalisiert; das "stop"-Signal setzt active=false.
- * Die Ressourcen werden beim nächsten Start bzw. beim Destroy freigegeben
- * (nicht im Signal-Callback selbst -> kein Release des Outputs aus seinem
- * eigenen Callback heraus).
+ * Pipeline on start:
+ *   obs_view (bank as channel 0) -> obs_view_add2 (video mix in bank size)
+ *   -> obs_video_encoder -> ffmpeg_muxer output -> file.
+ * On stop it finalizes asynchronously; the "stop" signal sets active=false.
+ * Resources are released on the next start or on destroy (not inside the
+ * signal callback itself -> never release the output from its own callback).
  */
 
 #include <obs-module.h>
@@ -32,20 +31,20 @@ the Free Software Foundation; either version 2 of the License, or
 #include "me-output.h"
 
 struct me_output {
-	obs_source_t *bank; /* Parent-Bank (roher Zeiger, extern gehalten) */
+	obs_source_t *bank; /* parent bank (raw pointer, held externally)  */
 	obs_view_t *view;
 	video_t *video;
-	obs_encoder_t *encoder;  /* Video                                   */
-	obs_encoder_t *aencoder; /* Audio (OBS-Hauptspur, Track 1)          */
+	obs_encoder_t *encoder;  /* video                                   */
+	obs_encoder_t *aencoder; /* audio (OBS main track, track 1)         */
 	obs_output_t *output;
 	pthread_mutex_t mutex;
 	bool active;
 	char path[1024];
 };
 
-/* ---- Hilfen ------------------------------------------------------------- */
+/* ---- Helpers ------------------------------------------------------------ */
 
-/* Quellnamen in einen dateisystemtauglichen Baustein wandeln. */
+/* Turn a source name into a filesystem-safe building block. */
 static void sanitize(const char *in, char *out, size_t out_sz)
 {
 	size_t j = 0;
@@ -74,8 +73,8 @@ static void timestamp(char *out, size_t out_sz)
 
 static void on_output_stopped(void *data, calldata_t *cd);
 
-/* Ressourcen freigeben (nur aufrufen, wenn NICHT mehr aktiv). Reihenfolge:
- * Output (nutzt Encoder) -> Encoder (nutzt Video) -> View/Video. */
+/* Release resources (only call when NOT active anymore). Order:
+ * output (uses encoder) -> encoder (uses video) -> view/video. */
 static void release_resources(struct me_output *o)
 {
 	if (o->output) {
@@ -110,7 +109,7 @@ static void on_output_stopped(void *data, calldata_t *cd)
 	obs_log(LOG_INFO, "recording stopped (code %lld): %s", code, o->path);
 }
 
-/* ---- Lebenszyklus ------------------------------------------------------- */
+/* ---- Lifecycle ---------------------------------------------------------- */
 
 me_output_t *me_output_create(obs_source_t *bank_source)
 {
@@ -129,7 +128,7 @@ bool me_output_start(me_output_t *o)
 		pthread_mutex_unlock(&o->mutex);
 		return true;
 	}
-	release_resources(o); /* evtl. Reste eines vorigen Laufs */
+	release_resources(o); /* leftovers from a previous run, if any */
 
 	obs_data_t *s = obs_source_get_settings(o->bank);
 	char *enc_id = bstrdup(obs_data_get_string(s, "rec_encoder"));
@@ -145,7 +144,7 @@ bool me_output_start(me_output_t *o)
 		goto done;
 	}
 
-	/* Video-Mix in Bank-Auflösung (sonst Haupt-Canvas). */
+	/* Video mix in bank resolution (otherwise the main canvas). */
 	struct obs_video_info ovi;
 	if (!obs_get_video_info(&ovi)) {
 		obs_log(LOG_WARNING, "recording not started: no video info");
@@ -181,9 +180,9 @@ bool me_output_start(me_output_t *o)
 	}
 	obs_encoder_set_video(o->encoder, o->video);
 
-	/* Audio: OBS-Hauptspur (Track 1 = mixer 0) — dieselbe Quelle wie die normale
-	 * OBS-Aufnahme. Gemeinsame Audiospur = Referenz zum frame-genauen Ausrichten
-	 * (Sync) der beiden Aufnahmen im Schnitt. */
+	/* Audio: OBS main track (track 1 = mixer 0) — the same source as the normal
+	 * OBS recording. A shared audio track is the reference for frame-accurate
+	 * alignment (sync) of the two recordings in post. */
 	obs_data_t *as = obs_data_create();
 	obs_data_set_int(as, "bitrate", 160);
 	o->aencoder = obs_audio_encoder_create("ffmpeg_aac", "multi_me_rec_audio", as, 0, NULL);
@@ -193,7 +192,7 @@ bool me_output_start(me_output_t *o)
 	else
 		obs_log(LOG_WARNING, "recording: AAC audio encoder failed (continuing video-only)");
 
-	/* Zielpfad: <Ordner>/<Bankname>_<Zeitstempel>.<Container> */
+	/* Target path: <folder>/<bank name>_<timestamp>.<container> */
 	if (!fmt || !*fmt)
 		fmt = bstrdup("mkv");
 	char safe[256], ts[32];
@@ -241,7 +240,7 @@ void me_output_stop(me_output_t *o)
 		return;
 	pthread_mutex_lock(&o->mutex);
 	if (o->active && o->output)
-		obs_output_stop(o->output); /* active wird im "stop"-Signal false */
+		obs_output_stop(o->output); /* active becomes false in the "stop" signal */
 	pthread_mutex_unlock(&o->mutex);
 }
 
@@ -264,8 +263,8 @@ void me_output_destroy(me_output_t *o)
 {
 	if (!o)
 		return;
-	/* "stop"-Signal trennen, BEVOR wir (force-)stoppen und freigeben, damit der
-	 * Callback nicht nach dem free feuert. */
+	/* Disconnect the "stop" signal BEFORE we (force-)stop and release, so the
+	 * callback can't fire after the free. */
 	if (o->output)
 		signal_handler_disconnect(obs_output_get_signal_handler(o->output), "stop", on_output_stopped, o);
 
@@ -281,11 +280,11 @@ void me_output_destroy(me_output_t *o)
 	bfree(o);
 }
 
-/* ---- Properties / Defaults --------------------------------------------- */
+/* ---- Properties / defaults ---------------------------------------------- */
 
 void me_output_add_properties(obs_properties_t *props)
 {
-	obs_property_t *enc = obs_properties_add_list(props, "rec_encoder", "Aufnahme-Encoder", OBS_COMBO_TYPE_LIST,
+	obs_property_t *enc = obs_properties_add_list(props, "rec_encoder", "Recording encoder", OBS_COMBO_TYPE_LIST,
 						      OBS_COMBO_FORMAT_STRING);
 	size_t i = 0;
 	const char *id;
@@ -296,8 +295,8 @@ void me_output_add_properties(obs_properties_t *props)
 		obs_property_list_add_string(enc, disp ? disp : id, id);
 	}
 
-	obs_properties_add_int(props, "rec_bitrate", "Aufnahme-Bitrate (kbps)", 500, 100000, 500);
-	obs_properties_add_path(props, "rec_path", "Aufnahme-Ordner", OBS_PATH_DIRECTORY, NULL, NULL);
+	obs_properties_add_int(props, "rec_bitrate", "Recording bitrate (kbps)", 500, 100000, 500);
+	obs_properties_add_path(props, "rec_path", "Recording folder", OBS_PATH_DIRECTORY, NULL, NULL);
 
 	obs_property_t *f =
 		obs_properties_add_list(props, "rec_format", "Container", OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);

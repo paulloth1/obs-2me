@@ -1,6 +1,6 @@
 /*
 Multi-M/E — Multiple Mix/Effects for OBS
-Copyright (C) 2026 Paul Loth <paulloth2208@gmail.com>
+Copyright (C) 2026 Paul Loth <mail@paulloth.de>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -9,14 +9,14 @@ the Free Software Foundation; either version 2 of the License, or
 */
 
 /*
- * me-multiview.cpp — Native-artige Multiview je M/E-Bank.
+ * me-multiview.cpp — native-like multiview per M/E bank.
  *
- * Eigenständiges Projektor-Fenster (Fenster/Vollbild) wie die OBS-Multiview:
- * oben PVW (links) + PGM (rechts), darunter bis zu 8 Szenen-Thumbnails (4x2).
- * Klick = Szene in Preview, Doppelklick = AUTO-Take. Esc schließt. Farbige
- * Rahmen + Text-Labels (PREVIEW/PROGRAM + Szenennamen).
+ * Standalone projector window (windowed/fullscreen) like the OBS multiview:
+ * PVW (left) + PGM (right) on top, below up to 8 scene thumbnails (4x2).
+ * Click = scene to preview, double-click = AUTO take. Esc closes. Colored
+ * borders + text labels (PREVIEW/PROGRAM + scene names).
  *
- * Geöffnet über Tools → "Multi-M/E Multiview" → je Bank Fenster/Vollbild.
+ * Opened via Tools -> "Multi-M/E Multiview" -> per bank windowed/fullscreen.
  */
 
 #include <obs-module.h>
@@ -57,7 +57,7 @@ the Free Software Foundation; either version 2 of the License, or
 
 static const int MV_MAX_THUMBS = 8;
 
-/* ---- Helfer: Bank-Liste + Procs ----------------------------------------- */
+/* ---- Helpers: bank list + procs ----------------------------------------- */
 
 struct BankInfo {
 	QString uuid;
@@ -123,7 +123,7 @@ static QImage mv_render_label(const QString &text)
 	return img;
 }
 
-/* ---- Grafik-Helfer (im Display-Render-Kontext) -------------------------- */
+/* ---- Graphics helpers (inside the display render context) --------------- */
 
 static void mv_draw_box(int x, int y, int w, int h, const struct vec4 &color)
 {
@@ -183,7 +183,7 @@ static void mv_draw_texture(gs_texture_t *tex, int x, int y)
 	gs_viewport_pop();
 }
 
-/* ---- Multiview-Fenster -------------------------------------------------- */
+/* ---- Multiview window --------------------------------------------------- */
 
 struct SceneRef {
 	QString name;
@@ -229,7 +229,7 @@ private:
 	void clearScenes(std::vector<SceneRef> &v);
 	static void drawCb(void *param, uint32_t cx, uint32_t cy);
 	void render(uint32_t cx, uint32_t cy);
-	gs_texture_t *labelTexture(const QString &text); /* nur Grafik-Thread */
+	gs_texture_t *labelTexture(const QString &text); /* graphics thread only */
 
 	QString m_uuid;
 	obs_display_t *m_display = nullptr;
@@ -237,8 +237,8 @@ private:
 	std::mutex m_mutex;
 	std::vector<SceneRef> m_scenes;
 	QString m_pgmName, m_pvwName;
-	QHash<QString, QImage> m_labelImages;       /* UI-Thread baut, Render liest (mutex) */
-	QHash<QString, gs_texture_t *> m_textCache; /* nur Grafik-Thread */
+	QHash<QString, QImage> m_labelImages;       /* UI thread builds, render reads (mutex) */
+	QHash<QString, gs_texture_t *> m_textCache; /* graphics thread only */
 	QString m_sceneSig;
 	QTimer *m_timer = nullptr;
 };
@@ -344,7 +344,7 @@ void MEMultiview::refreshSnapshot()
 		obs_source_release(bank);
 	}
 
-	/* Pass 1: Signatur der gefilterten Szenen (max 8), ohne inc_showing */
+	/* Pass 1: signature of the filtered scenes (max 8), without inc_showing */
 	struct SigCtx {
 		QString sig;
 		int n;
@@ -362,7 +362,7 @@ void MEMultiview::refreshSnapshot()
 		&sc);
 
 	if (sc.sig != m_sceneSig) {
-		/* Pass 2: Szenen sammeln (inc_showing) + Labels rendern (max 8) */
+		/* Pass 2: collect scenes (inc_showing) + render labels (max 8) */
 		struct ColCtx {
 			std::vector<SceneRef> fresh;
 			QHash<QString, QImage> labels;
@@ -438,7 +438,7 @@ gs_texture_t *MEMultiview::labelTexture(const QString &text)
 		auto i2 = m_labelImages.find(text);
 		if (i2 == m_labelImages.end())
 			return nullptr;
-		img = i2.value(); /* COW-Kopie */
+		img = i2.value(); /* COW copy */
 	}
 	const uint8_t *data = img.constBits();
 	gs_texture_t *tex = gs_texture_create((uint32_t)img.width(), (uint32_t)img.height(), GS_RGBA, 1, &data, 0);
@@ -538,7 +538,7 @@ void MEMultiview::mouseDoubleClickEvent(QMouseEvent *e)
 	}
 }
 
-/* ---- Fenster-Verwaltung + Tools-Menü ------------------------------------ */
+/* ---- Window management + Tools menu ------------------------------------- */
 
 static QList<QPointer<MEMultiview>> g_windows;
 
@@ -563,18 +563,18 @@ static void rebuild_menu(QMenu *menu)
 	menu->clear();
 	QList<BankInfo> banks = mv_enum_banks();
 	if (banks.isEmpty()) {
-		QAction *a = menu->addAction(QStringLiteral("(keine Multi-M/E-Quelle)"));
+		QAction *a = menu->addAction(QStringLiteral("(no Multi-M/E source)"));
 		a->setEnabled(false);
 		return;
 	}
 	const QList<QScreen *> screens = QGuiApplication::screens();
 	for (const BankInfo &b : banks) {
-		QMenu *sub = menu->addMenu(b.name.isEmpty() ? QStringLiteral("(unbenannt)") : b.name);
+		QMenu *sub = menu->addMenu(b.name.isEmpty() ? QStringLiteral("(unnamed)") : b.name);
 		const QString uuid = b.uuid, name = b.name;
-		QObject::connect(sub->addAction(QStringLiteral("Fenster")), &QAction::triggered,
+		QObject::connect(sub->addAction(QStringLiteral("Windowed")), &QAction::triggered,
 				 [uuid, name]() { open_multiview(uuid, name, -1); });
 		for (int i = 0; i < screens.size(); i++) {
-			QObject::connect(sub->addAction(QStringLiteral("Vollbild — Monitor %1").arg(i + 1)),
+			QObject::connect(sub->addAction(QStringLiteral("Fullscreen — Monitor %1").arg(i + 1)),
 					 &QAction::triggered, [uuid, name, i]() { open_multiview(uuid, name, i); });
 		}
 	}

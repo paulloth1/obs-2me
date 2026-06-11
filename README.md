@@ -2,107 +2,109 @@
 
 # Multi-M/E — Multiple Mix/Effects for OBS
 
-Ein OBS-Plugin, das OBS um zusätzliche **Mischebenen (M/E-Bänke)** erweitert — wie bei
-einem Hardware-Bildmischer (ATEM / TriCaster / Ross / Sony). Jede Bank hat einen eigenen
-**Program-/Preview-Bus** mit **Cut/Auto-Übergängen** und wird über ein **Mischpult-Dock**
-bedient.
+An OBS plugin that adds extra **mixing layers (M/E banks)** to OBS — like a hardware video
+switcher (ATEM / TriCaster / Ross / Sony). Each bank has its own **program/preview bus** with
+**cut/auto transitions** and is operated through a **control-surface dock**.
 
-> **Status: Beta / Work in Progress.** Reine Video-Mischung (kein eigener Audio-Mix —
-> Audio läuft weiter über den normalen OBS-Mixer). Entwickelt/getestet mit **OBS 31 / Qt 6.8**
-> (benötigt OBS 30+).
+> **Status: Beta / work in progress.** Video mixing only (no separate audio mix — audio keeps
+> running through the normal OBS mixer). Developed/tested with **OBS 31 / Qt 6.8** (requires
+> OBS 30+).
 
-OBS' Haupt-Canvas + Studio-Modus ist faktisch **M/E 1** — dieses Plugin liefert **M/E 2 … n**.
+OBS' main canvas + Studio Mode is effectively **M/E 1** — this plugin provides **M/E 2 … n**.
 
 ## Features
 
-- **M/E-Bank als Quelle** („Multi-M/E — Mix/Effects (Re-entry)"): jede Instanz ist eine eigene
-  Mischebene; ihr Ausgang lässt sich wie jede andere Quelle in Hauptszenen platzieren
-  („Re-entry").
-- **Program-/Preview-Bus** aus OBS-Szenen, **CUT** (sofort) und **AUTO** (Übergang); beim
-  Take tauschen PGM/PVW (Ping-Pong wie am Pult).
-- **Übergänge**: Fade / Swipe / Slide mit einstellbarer Dauer.
-- **Mischpult-Dock**: Bank-Auswahl, **PGM/PVW-Tally** (rot/grün), Preview-Bus-Buttons,
-  CUT/AUTO, Übergangstyp + Dauer. Bank-/Szenenliste aktualisiert sich automatisch; die
-  zuletzt gewählte Bank wird gemerkt.
-- **Multiview je Bank**: eigener PGM/PVW-Projektor (Fenster oder Vollbild) über **Tools →
-  Multi-M/E Multiview**, mit 8 Szenen-Vorschauen (Klick = Preview, Doppelklick = Auto, Esc
-  schließt) — wie die native OBS-Multiview.
-- **Fernsteuerung via obs-websocket** (Vendor `multi-me`): Preview/Program setzen, CUT und
-  AUTO auslösen z. B. mit **Bitfocus Companion**. Bank per Name oder UUID adressierbar.
-- **Hotkeys** je Bank (Einstellungen → Hotkeys: „Multi-M/E: Cut" / „Multi-M/E: Auto/Take").
-- **Mehrere Bänke** = einfach mehrere Quell-Instanzen einfügen.
+- **M/E bank as a source** ("Multi-M/E — Mix/Effects (Re-entry)"): each instance is its own
+  mixing layer; its output can be placed in main scenes like any other source ("re-entry").
+- **Program/preview bus** from OBS scenes, **CUT** (immediate) and **AUTO** (transition); on a
+  take PGM/PVW swap (ping-pong like at a switcher).
+- **Transitions**: Fade / Swipe / Slide with adjustable duration.
+- **Control-surface dock**: bank selection, **PGM/PVW tally** (red/green), preview-bus buttons,
+  CUT/AUTO, transition type + duration, and a **REC** button. The bank/scene list updates
+  automatically; the last selected bank is remembered.
+- **Multiview per bank**: a dedicated PGM/PVW projector (window or fullscreen) via **Tools →
+  Multi-M/E Multiview**, with 8 scene previews (click = preview, double-click = auto, Esc
+  closes) — like the native OBS multiview.
+- **Own file recording per bank**: record a bank's mixed output to its own file (separate
+  encoder/bitrate), with the OBS main audio track for easy sync with the main recording.
+- **Remote control via obs-websocket** (vendor `multi-me`): set preview/program, trigger CUT
+  and AUTO, start/stop recording — e.g. with **Bitfocus Companion**. Bank by name or UUID.
+- **Hotkeys** per bank (Settings → Hotkeys: "Multi-M/E: Cut" / "Multi-M/E: Auto/Take" and
+  "Preview Input 1…12").
+- **Multiple banks** = simply add more source instances.
 
-## Installation (Beta)
+## Installation (beta)
 
 ### Windows
-1. Das Plugin-Zip entpacken.
-2. Den Ordner `multi-me` in das OBS-Plugin-Verzeichnis kopieren, sodass die Struktur so aussieht:
+1. Unzip the plugin archive.
+2. Copy the `multi-me` folder into the OBS plugin directory so the structure looks like:
    ```
    %APPDATA%\obs-studio\plugins\multi-me\bin\64bit\multi-me.dll
    %APPDATA%\obs-studio\plugins\multi-me\data\...
    ```
-   Tipp: `%APPDATA%` in die Explorer-Adressleiste eingeben → landet in
-   `C:\Users\<Name>\AppData\Roaming`. (Kein Administrator nötig.)
-3. OBS starten. Dock über **Docks → Multi-M/E** einblenden.
+   Tip: type `%APPDATA%` into the Explorer address bar → it lands in
+   `C:\Users\<name>\AppData\Roaming`. (No administrator needed.)
+3. Start OBS. Show the dock via **Docks → Multi-M/E**.
 
 ### macOS
-`multi-me.plugin` nach `~/Library/Application Support/obs-studio/plugins/` kopieren, OBS starten.
+Copy `multi-me.plugin` to `~/Library/Application Support/obs-studio/plugins/`, start OBS.
 
 ### Linux
-Den Inhalt des Pakets nach `~/.config/obs-studio/plugins/multi-me/` entpacken
-(`bin/64bit/multi-me.so` + `data/`), OBS starten. **Siehe Einschränkungen unten.**
+Unpack the package contents into `~/.config/obs-studio/plugins/multi-me/`
+(`bin/64bit/multi-me.so` + `data/`), start OBS. **See limitations below.**
 
-## Benutzung
+## Usage
 
-1. In einer Szene **Quelle hinzufügen → „Multi-M/E — Mix/Effects (Re-entry)"**.
-2. **Docks → Multi-M/E** öffnen und im Dock die Bank wählen.
-3. Im **Preview-Bus** eine Szene anklicken (= PVW), dann **CUT** oder **AUTO** — der Bank-
-   Ausgang (die Re-entry-Quelle in deiner Hauptszene) schaltet entsprechend.
+1. In a scene, **Add source → "Multi-M/E — Mix/Effects (Re-entry)"**.
+2. Open **Docks → Multi-M/E** and select the bank in the dock.
+3. Click a scene in the **preview bus** (= PVW), then **CUT** or **AUTO** — the bank output
+   (the re-entry source in your main scene) switches accordingly.
 
-> ⚠️ PGM/PVW **nicht** auf die Szene legen, die die Multi-M/E-Quelle selbst enthält → Feedback-Schleife.
+> ⚠️ Do **not** put PGM/PVW on the scene that contains the Multi-M/E source itself → feedback loop.
 
-### Steuerung via obs-websocket / Bitfocus Companion
+### Control via obs-websocket / Bitfocus Companion
 
-obs-websocket aktivieren (**Tools → WebSocket-Servereinstellungen**). Die Bänke werden über
-den Vendor `multi-me` per `CallVendorRequest` gesteuert (`bank` = Quellname **oder** UUID):
+Enable obs-websocket (**Tools → WebSocket Server Settings**). The banks are controlled through
+the vendor `multi-me` via `CallVendorRequest` (`bank` = source name **or** UUID):
 
-| Request | Daten | Wirkung |
+| Request | Data | Effect |
 | --- | --- | --- |
-| `set_preview` | `{ bank, scene }` | Szene in die Vorschau der Bank |
-| `set_program` | `{ bank, scene }` | Szene sofort auf Program (harter Schnitt) |
+| `set_preview` | `{ bank, scene }` | scene into the bank's preview |
+| `set_program` | `{ bank, scene }` | scene straight to program (hard cut) |
 | `cut` | `{ bank }` | Cut (PVW → PGM) |
-| `auto` | `{ bank }` | Auto-Take (Übergang) |
-| `get_banks` | `{ }` | Liste aller Bänke `[{name, uuid}]` |
-| `get_state` | `{ bank }` | `{ program, preview, in_transition, kind, duration }` |
+| `auto` | `{ bank }` | Auto-Take (transition) |
+| `start_record` / `stop_record` | `{ bank }` | start/stop the bank's file recording |
+| `get_banks` | `{ }` | list of all banks (incl. ready-made hotkey IDs) |
+| `get_state` | `{ bank }` | `{ program, preview, in_transition, kind, duration, recording, rec_file }` |
 
-In **Bitfocus Companion** (OBS-Studio-Modul): Aktion **Custom Vendor Request** → Vendor
-`multi-me`, Request-Typ z. B. `cut`, Request-Daten `{"bank":"Meine M/E"}`. Alternativ je Bank
-per **Trigger Hotkey by ID** (CUT/AUTO/„Preview Input 1…12").
+In **Bitfocus Companion** (OBS Studio module): action **Custom Vendor Request** → vendor
+`multi-me`, request type e.g. `cut`, request data `{"bank":"My M/E"}`. Alternatively, per bank
+via **Trigger Hotkey by ID** (CUT/AUTO/"Preview Input 1…12").
 
-📖 Vollständige Companion-Anleitung (Requests, Hotkey-IDs, Feedback/Tally): [docs/companion.md](docs/companion.md).
+📖 Full Companion guide (requests, hotkey IDs, feedback/tally): [docs/companion.md](docs/companion.md).
 
-## Bekannte Einschränkungen
+## Known limitations
 
-- **Linux: Multiview-Projektor rendert (noch) nicht.** Das Plugin baut und lädt unter Linux,
-  und Dock, Bus, CUT/AUTO, Hotkeys sowie die WebSocket-Steuerung funktionieren. Der
-  Multiview-Projektor setzt das native Fenster-Handle bisher nur für Windows und macOS — der
-  X11/Wayland-Pfad fehlt, daher bleibt das Multiview-Fenster unter Linux leer. Als Workaround
-  die Bank-Quelle in eine Szene legen und einen normalen OBS-Projektor verwenden.
-- **Kein eigener Audio-Mix** (Design): Audio läuft weiter über den normalen OBS-Mixer.
-- **Getestet** primär unter **macOS**; Windows/Linux werden gebaut, aber weniger ausgiebig
-  erprobt.
+- **Linux: the multiview projector does not render (yet).** The plugin builds and loads on
+  Linux, and the dock, bus, CUT/AUTO, hotkeys and WebSocket control all work. The multiview
+  projector only sets the native window handle on Windows and macOS so far — the X11/Wayland
+  path is missing, so the multiview window stays blank on Linux. Workaround: place the bank
+  source in a scene and use a normal OBS projector.
+- **No separate audio mix** (by design): audio keeps running through the normal OBS mixer.
+  (The per-bank file recording does include the OBS main audio track.)
+- **Tested** primarily on **macOS**; Windows/Linux are built but exercised less thoroughly.
 
-## Aus dem Quellcode bauen
+## Building from source
 
-Das Projekt basiert auf dem [OBS Plugin Template](https://github.com/obsproject/obs-plugintemplate).
+The project is based on the [OBS Plugin Template](https://github.com/obsproject/obs-plugintemplate).
 
-- **Windows / macOS / Linux (offiziell):** über GitHub Actions (`.github/workflows`) oder lokal
-  mit dem Template-Build (CMake; Windows: Visual Studio 2022, macOS: Xcode).
-- **macOS schnell, ohne volles Xcode:** `./dev/build.sh` (isolierter Ninja-Dev-Build) —
-  siehe [dev/README.md](dev/README.md).
+- **Windows / macOS / Linux (official):** via GitHub Actions (`.github/workflows`) or locally
+  with the template build (CMake; Windows: Visual Studio 2022, macOS: Xcode).
+- **macOS quick, without full Xcode:** `./dev/build.sh` (isolated Ninja dev build) — see
+  [dev/README.md](dev/README.md).
 
-Projektziele, Architektur und Fortschritt: siehe [PROJEKT.md](PROJEKT.md).
+Project goals, architecture and progress: see [PROJEKT.md](PROJEKT.md) (in German).
 
-## Lizenz
+## License
 
-GPL v2 or later — siehe [LICENSE](LICENSE).
+GPL v2 or later — see [LICENSE](LICENSE).

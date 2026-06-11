@@ -1,6 +1,6 @@
 /*
 Multi-M/E — Multiple Mix/Effects for OBS
-Copyright (C) 2026 Paul Loth <paulloth2208@gmail.com>
+Copyright (C) 2026 Paul Loth <mail@paulloth.de>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -9,30 +9,30 @@ the Free Software Foundation; either version 2 of the License, or
 */
 
 /*
- * me-websocket.c — obs-websocket-Vendor "multi-me".
+ * me-websocket.c — obs-websocket vendor "multi-me".
  *
- * Stellt Custom-Requests bereit, die WebSocket-Clients (z. B. Bitfocus
- * Companion via CallVendorRequest) auslösen können, um die M/E-Bänke zu
- * steuern. Die Requests hängen sich an die Proc-Handler der Bank-Quellen.
+ * Provides custom requests that WebSocket clients (e.g. Bitfocus Companion via
+ * CallVendorRequest) can trigger to control the M/E banks. The requests hook
+ * into the proc handlers of the bank sources.
  *
  * Requests (vendorName = "multi-me"):
- *   set_preview  { bank, scene }     -> Szene in die Vorschau der Bank
- *   set_program  { bank, scene }     -> Szene sofort auf Program (harter Schnitt)
+ *   set_preview  { bank, scene }     -> scene into the bank's preview
+ *   set_program  { bank, scene }     -> scene straight to program (hard cut)
  *   cut          { bank }            -> Cut (PVW -> PGM)
- *   auto         { bank }            -> Auto-Take (Übergang)
- *   get_banks    { }                 -> Liste aller Bänke
+ *   auto         { bank }            -> Auto-Take (transition)
+ *   get_banks    { }                 -> list of all banks
  *                                       [{name, uuid, hotkey_cut, hotkey_auto,
  *                                         hotkeys_preview:[{input, hotkey}]}]
  *   get_state    { bank }            -> { program, preview, in_transition, kind,
  *                                         duration, recording, rec_file }
- *   start_record { bank }            -> Datei-Aufnahme dieser Bank starten
- *   stop_record  { bank }            -> Datei-Aufnahme dieser Bank stoppen
+ *   start_record { bank }            -> start this bank's file recording
+ *   stop_record  { bank }            -> stop this bank's file recording
  *
- * "bank" akzeptiert UUID oder Quellname.
+ * "bank" accepts a UUID or a source name.
  *
- * Die Anbindung an obs-websocket erfolgt über dessen global registrierte
- * Procs (stabile API): "obs_websocket_api_get_ph" -> liefert den Proc-Handler,
- * darauf "vendor_register" und "vendor_request_register".
+ * The binding to obs-websocket goes through its globally registered procs
+ * (stable API): "obs_websocket_api_get_ph" -> returns the proc handler, on
+ * which "vendor_register" and "vendor_request_register" are called.
  */
 
 #include <obs-module.h>
@@ -41,7 +41,7 @@ the Free Software Foundation; either version 2 of the License, or
 #include <stdio.h> /* snprintf */
 
 #include "me-websocket.h"
-#include "me-bank.h" /* Hotkey-Namens-Schema (ME_HOTKEY_*_FMT, ME_PVW_SLOTS) */
+#include "me-bank.h" /* hotkey naming scheme (ME_HOTKEY_*_FMT, ME_PVW_SLOTS) */
 
 typedef void (*ws_request_cb)(obs_data_t *request_data, obs_data_t *response_data, void *priv_data);
 
@@ -50,7 +50,7 @@ struct ws_request_callback {
 	void *priv_data;
 };
 
-/* ---- Minimale obs-websocket-Anbindung über Procs ------------------------ */
+/* ---- Minimal obs-websocket binding via procs ---------------------------- */
 
 static proc_handler_t *ws_get_ph(void)
 {
@@ -90,7 +90,7 @@ static bool ws_register_request(proc_handler_t *ph, void *vendor, const char *ty
 	return ok;
 }
 
-/* ---- Helfer ------------------------------------------------------------- */
+/* ---- Helpers ------------------------------------------------------------ */
 
 static obs_source_t *resolve_bank(obs_data_t *req)
 {
@@ -123,7 +123,7 @@ static void fail(obs_data_t *res, const char *msg)
 	obs_data_set_string(res, "error", msg);
 }
 
-/* ---- Request-Handler ---------------------------------------------------- */
+/* ---- Request handlers --------------------------------------------------- */
 
 static void req_set_preview(obs_data_t *req, obs_data_t *res, void *priv)
 {
@@ -222,8 +222,8 @@ static bool enum_banks_cb(void *param, obs_source_t *src)
 		obs_data_set_string(item, "name", obs_source_get_name(src));
 		obs_data_set_string(item, "uuid", uuid);
 
-		/* Fertige Hotkey-IDs mitliefern, damit man sie direkt in Companions
-		 * "Trigger Hotkey by ID" kopieren kann (gleiches Schema wie me-bank-source.c). */
+		/* Include ready-to-use hotkey IDs so they can be copied straight into
+		 * Companion's "Trigger Hotkey by ID" (same scheme as me-bank-source.c). */
 		char buf[200];
 		snprintf(buf, sizeof(buf), ME_HOTKEY_CUT_FMT, uuid);
 		obs_data_set_string(item, "hotkey_cut", buf);
@@ -282,7 +282,7 @@ static void req_get_state(obs_data_t *req, obs_data_t *res, void *priv)
 	obs_source_release(b);
 }
 
-/* ---- Registrierung ------------------------------------------------------ */
+/* ---- Registration -------------------------------------------------------- */
 
 void me_websocket_register(void)
 {

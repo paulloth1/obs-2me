@@ -1,6 +1,6 @@
 /*
 Multi-M/E — Multiple Mix/Effects for OBS
-Copyright (C) 2026 Paul Loth <paulloth2208@gmail.com>
+Copyright (C) 2026 Paul Loth <mail@paulloth.de>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -9,16 +9,16 @@ the Free Software Foundation; either version 2 of the License, or
 */
 
 /*
- * me-dock.cpp — Qt-Mischpult-Docks für Multi-M/E (ein Dock pro Bank).
+ * me-dock.cpp — Qt control-surface docks for Multi-M/E (one dock per bank).
  *
- * Ein Manager (Reconcile-Timer + Frontend-Events) legt für jede Quelle vom Typ
- * "multi_me_bank" ein eigenes Dock an (Titel = Quellname, stabile ID via
- * Quell-UUID) und entfernt es wieder, sobald die Quelle verschwindet. So lassen
- * sich mehrere M/E-Bänke als getrennte, frei anordenbare Docks stapeln.
+ * A manager (reconcile timer + frontend events) creates a dedicated dock for
+ * every source of type "multi_me_bank" (title = source name, stable id via the
+ * source UUID) and removes it again as soon as the source disappears. This lets
+ * you stack multiple M/E banks as separate, freely arrangeable docks.
  *
- * Jedes Dock steuert genau seine Bank über deren Proc-Handler:
- *   - Preview-Bus (Szenen-Buttons, aktive = grün), CUT / AUTO
- *   - Übergangstyp + Dauer; Program/Preview als Tally-Anzeige
+ * Each dock controls exactly its bank via that bank's proc handler:
+ *   - preview bus (scene buttons, active = green), CUT / AUTO
+ *   - transition type + duration; program/preview as a tally display
  */
 
 #include <obs-module.h>
@@ -52,7 +52,7 @@ the Free Software Foundation; either version 2 of the License, or
 static const char *BUS_DEFAULT = "padding:3px;";
 static const char *BUS_PVW = "padding:3px; background:#27ae60; color:white; font-weight:bold;";
 
-/* ---- FlowLayout: Buttons brechen je nach Breite automatisch um ---------- */
+/* ---- FlowLayout: buttons wrap automatically depending on width ---------- */
 class FlowLayout : public QLayout {
 public:
 	explicit FlowLayout(QWidget *parent, int margin = 0, int spacing = 4) : QLayout(parent), m_space(spacing)
@@ -113,9 +113,9 @@ private:
 	int m_space;
 };
 
-/* ---- Pro-Bank-Dock-Zustand --------------------------------------------- */
+/* ---- Per-bank dock state ----------------------------------------------- */
 struct DockCtx {
-	QString uuid; /* feste Bank dieses Docks */
+	QString uuid; /* the fixed bank of this dock */
 	QString name;
 	QWidget *root = nullptr;
 	FlowLayout *pvwFlow = nullptr;
@@ -127,11 +127,11 @@ struct DockCtx {
 	QPushButton *recBtn = nullptr;
 	QString sceneSig;
 	QString lastPvw;
-	int lastRec = -1; /* -1 = noch nicht gesetzt, 0/1 = Aufnahme aus/an */
+	int lastRec = -1; /* -1 = not set yet, 0/1 = recording off/on */
 	bool updatingControls = false;
 };
 
-static QHash<QString, DockCtx *> g_docks; /* uuid -> Dock (nur UI-Thread) */
+static QHash<QString, DockCtx *> g_docks; /* uuid -> dock (UI thread only) */
 static QTimer *g_reconcileTimer = nullptr;
 
 static QString dock_id_for(const QString &uuid)
@@ -139,13 +139,13 @@ static QString dock_id_for(const QString &uuid)
 	return QStringLiteral("multime_") + uuid;
 }
 
-/* ---- Auf der Bank dieses Docks arbeiten --------------------------------- */
+/* ---- Operating on this dock's bank -------------------------------------- */
 
 static obs_source_t *dock_bank(DockCtx *ctx)
 {
 	if (!ctx || ctx->uuid.isEmpty())
 		return nullptr;
-	return obs_get_source_by_uuid(ctx->uuid.toUtf8().constData()); /* mit Ref */
+	return obs_get_source_by_uuid(ctx->uuid.toUtf8().constData()); /* with ref */
 }
 
 static void dock_call(DockCtx *ctx, const char *proc)
@@ -199,7 +199,7 @@ static QString dock_scenes_signature(const QString &uuid)
 	return sig;
 }
 
-/* ---- Befüllen ----------------------------------------------------------- */
+/* ---- Populating --------------------------------------------------------- */
 
 static void dock_fill_bus(DockCtx *ctx)
 {
@@ -296,12 +296,12 @@ static void dock_tick(DockCtx *ctx)
 	}
 }
 
-/* ---- Dock-Platzierung über Collection-Wechsel hinweg merken ------------- */
+/* ---- Remember dock placement across collection switches ----------------- */
 
-/* Gemerkte Lage/Sichtbarkeit eines Bank-Docks (pro Bank-UUID, sitzungsweit).
- * Nötig, weil wir Docks beim Collection-Wechsel entfernen und neu anlegen —
- * ein frisch via obs_frontend_add_dock_by_id hinzugefügtes Dock wäre sonst
- * versteckt und nicht angedockt, der Nutzer müsste es jedes Mal neu öffnen. */
+/* Remembered placement/visibility of a bank dock (per bank UUID, session-wide).
+ * Needed because we remove and re-create docks on a collection switch — a dock
+ * freshly added via obs_frontend_add_dock_by_id would otherwise be hidden and
+ * not docked, and the user would have to re-open it every time. */
 struct DockPlacement {
 	bool known = false;
 	bool floating = false;
@@ -309,14 +309,14 @@ struct DockPlacement {
 	Qt::DockWidgetArea area = Qt::RightDockWidgetArea;
 	QByteArray geometry;
 };
-static QHash<QString, DockPlacement> g_placement; /* uuid -> letzte Lage */
+static QHash<QString, DockPlacement> g_placement; /* uuid -> last placement */
 
 static QMainWindow *main_window()
 {
 	return static_cast<QMainWindow *>(obs_frontend_get_main_window());
 }
 
-/* Vom Inhalts-Widget zum umschließenden QDockWidget (von OBS erzeugt) hochlaufen. */
+/* Walk up from the content widget to the enclosing QDockWidget (created by OBS). */
 static QDockWidget *dock_widget_of(QWidget *root)
 {
 	QWidget *w = root;
@@ -325,7 +325,7 @@ static QDockWidget *dock_widget_of(QWidget *root)
 	return qobject_cast<QDockWidget *>(w);
 }
 
-/* Aktuelle Lage merken (vor dem Entfernen aufrufen). */
+/* Remember the current placement (call before removing). */
 static void capture_placement(const QString &uuid, QWidget *root)
 {
 	QDockWidget *dw = dock_widget_of(root);
@@ -342,7 +342,7 @@ static void capture_placement(const QString &uuid, QWidget *root)
 	g_placement[uuid] = p;
 }
 
-/* Gemerkte Lage wiederherstellen; unbekannte Bank -> sichtbar + rechts andocken. */
+/* Restore the remembered placement; unknown bank -> visible + docked right. */
 static void apply_placement(const QString &uuid, QWidget *root)
 {
 	QDockWidget *dw = dock_widget_of(root);
@@ -362,7 +362,7 @@ static void apply_placement(const QString &uuid, QWidget *root)
 	dw->setVisible(p.known ? p.visible : true);
 }
 
-/* ---- Ein Dock für eine Bank bauen + registrieren ------------------------ */
+/* ---- Build + register one dock for a bank ------------------------------- */
 
 static DockCtx *build_bank_dock(const QString &uuid, const QString &name)
 {
@@ -390,7 +390,7 @@ static DockCtx *build_bank_dock(const QString &uuid, const QString &name)
 	outer->addWidget(ctx->pgmLabel);
 	outer->addWidget(ctx->pvwLabel);
 
-	/* Preview-Bus in scrollbarer Fläche */
+	/* Preview bus in a scrollable area */
 	auto *scroll = new QScrollArea();
 	scroll->setWidgetResizable(true);
 	scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -400,7 +400,7 @@ static DockCtx *build_bank_dock(const QString &uuid, const QString &name)
 	scroll->setWidget(busWidget);
 	outer->addWidget(scroll, 1);
 
-	/* Übergang: Typ + Dauer */
+	/* Transition: type + duration */
 	auto *transRow = new QHBoxLayout();
 	ctx->transCombo = new QComboBox();
 	ctx->transCombo->addItem(QStringLiteral("Fade"), QStringLiteral("fade_transition"));
@@ -427,12 +427,12 @@ static DockCtx *build_bank_dock(const QString &uuid, const QString &name)
 	btnRow->addWidget(autoBtn);
 	outer->addLayout(btnRow);
 
-	/* Aufnahme (eigener Datei-Output dieser Bank) */
+	/* Recording (this bank's own file output) */
 	ctx->recBtn = new QPushButton(QStringLiteral("● REC"));
 	ctx->recBtn->setMinimumHeight(28);
 	outer->addWidget(ctx->recBtn);
 
-	/* Verdrahtung */
+	/* Wiring */
 	QObject::connect(cutBtn, &QPushButton::clicked, [ctx]() { dock_call(ctx, "cut"); });
 	QObject::connect(autoBtn, &QPushButton::clicked, [ctx]() { dock_call(ctx, "auto_take"); });
 	QObject::connect(ctx->recBtn, &QPushButton::clicked, [ctx]() { dock_call(ctx, "toggle_record"); });
@@ -455,7 +455,7 @@ static DockCtx *build_bank_dock(const QString &uuid, const QString &name)
 
 	obs_frontend_add_dock_by_id(dock_id_for(uuid).toUtf8().constData(), name.toUtf8().constData(), root);
 
-	/* Lage erst herstellen, wenn das umschließende QDockWidget gesetzt ist. */
+	/* Apply the placement only once the enclosing QDockWidget is set. */
 	QTimer::singleShot(0, root, [uuid, root]() { apply_placement(uuid, root); });
 	return ctx;
 }
@@ -466,7 +466,7 @@ static void update_dock_title(DockCtx *ctx, const QString &name)
 		dw->setWindowTitle(name);
 }
 
-/* ---- Reconcile: Docks an vorhandene Bänke angleichen -------------------- */
+/* ---- Reconcile: align docks with the existing banks --------------------- */
 
 struct BankInfo {
 	QString uuid;
@@ -504,8 +504,8 @@ static void reconcile_docks()
 	for (auto it = g_docks.begin(); it != g_docks.end();) {
 		if (!present.contains(it.key())) {
 			const QString uuid = it.key();
-			/* Lage merken, bevor das Dock verschwindet (z. B. Collection-Wechsel),
-			 * damit es beim Wiederkommen an gleicher Stelle + sichtbar erscheint. */
+			/* Remember the placement before the dock disappears (e.g. collection
+			 * switch), so it reappears in the same spot + visible. */
 			capture_placement(uuid, it.value()->root);
 			it = g_docks.erase(it);
 			obs_frontend_remove_dock(dock_id_for(uuid).toUtf8().constData());
@@ -515,7 +515,7 @@ static void reconcile_docks()
 	}
 }
 
-/* ---- Frontend-Events + Registrierung ------------------------------------ */
+/* ---- Frontend events + registration ------------------------------------- */
 
 static void me_dock_on_frontend_event(enum obs_frontend_event event, void *data)
 {
