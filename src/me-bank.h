@@ -10,6 +10,20 @@ the Free Software Foundation; either version 2 of the License, or
 
 #pragma once
 
+/* Hotkey-Namens-Schema je Bank. Der Name (nicht die Anzeige) ist eindeutig pro
+ * Bank über die Quell-UUID, damit obs-websocket / Companion "Trigger Hotkey by
+ * ID" (TriggerHotkeyByName) gezielt EINE Bank schaltet. Muss in
+ * me-bank-source.c (Registrierung) und me-websocket.c (get_banks-Auskunft)
+ * identisch verwendet werden. %s = Quell-UUID, %d = Preview-Slot (1-basiert). */
+#define ME_HOTKEY_CUT_FMT "multime.cut.%s"
+#define ME_HOTKEY_AUTO_FMT "multime.auto.%s"
+#define ME_HOTKEY_PVW_FMT "multime.pvw.%s.%d"
+
+/* Feste Anzahl Preview-Bus-Hotkeys je Bank ("Preview Input 1..N"), analog zu den
+ * festen Bus-Tasten eines Hardware-Mischers. Slot i schaltet die i-te Szene der
+ * gefilterten Bus-Liste (me_scenes_enum) in die Vorschau der Bank. */
+#define ME_PVW_SLOTS 12
+
 #ifdef __cplusplus
 extern "C" {
 #endif

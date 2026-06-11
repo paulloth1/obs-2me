@@ -17,6 +17,7 @@
 !README.md
 !/PROJEKT.md
 !/dev
+!/docs
 
 # Exclude lock files
 *.lock.json

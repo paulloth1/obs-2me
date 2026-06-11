@@ -26,9 +26,18 @@ the Free Software Foundation; either version 2 of the License, or
 #include <util/platform.h>
 #include <util/threading.h> /* portables pthread_mutex_* (auch Windows) */
 #include <string.h>
+#include <stdio.h> /* snprintf */
 
 #include "me-bank.h"
 #include "me-scenes.h"
+
+struct me_bank;
+
+/* Callback-Kontext eines Preview-Slot-Hotkeys (stabil in der Bank gespeichert). */
+struct me_pvw_slot {
+	struct me_bank *bank;
+	int index; /* 0-basiert: schaltet die (index+1)-te Bus-Szene in PVW */
+};
 
 struct me_bank {
 	obs_source_t *source;     /* unsere eigene Quelle (Parent)            */
@@ -45,6 +54,8 @@ struct me_bank {
 
 	obs_hotkey_id cut_hotkey;
 	obs_hotkey_id auto_hotkey;
+	obs_hotkey_id pvw_hotkeys[ME_PVW_SLOTS]; /* "Preview Input 1..N"      */
+	struct me_pvw_slot pvw_slots[ME_PVW_SLOTS];
 };
 
 /* ---------------------------------------------------------------- Helpers -- */
@@ -170,10 +181,9 @@ static void me_bank_proc_auto(void *data, calldata_t *cd)
 	bank_auto((struct me_bank *)data);
 }
 
-static void me_bank_proc_set_preview(void *data, calldata_t *cd)
+/* PVW auf eine Szene setzen (per Name) + in den Settings persistieren. */
+static void bank_set_preview(struct me_bank *b, const char *scene)
 {
-	struct me_bank *b = data;
-	const char *scene = calldata_string(cd, "scene");
 	pthread_mutex_lock(&b->mutex);
 	set_weak_by_name(&b->pvw, scene);
 	pthread_mutex_unlock(&b->mutex);
@@ -181,6 +191,41 @@ static void me_bank_proc_set_preview(void *data, calldata_t *cd)
 	obs_data_t *s = obs_source_get_settings(b->source);
 	obs_data_set_string(s, "pvw_scene", scene ? scene : "");
 	obs_data_release(s);
+}
+
+/* Die index-te Szene (0-basiert) der gefilterten Bus-Liste finden. */
+struct me_pick_scene {
+	int target;
+	int cur;
+	char name[256];
+	bool found;
+};
+
+static bool me_pick_scene_cb(void *param, const char *name, obs_source_t *scene)
+{
+	UNUSED_PARAMETER(scene);
+	struct me_pick_scene *pk = param;
+	if (pk->cur == pk->target) {
+		snprintf(pk->name, sizeof(pk->name), "%s", name ? name : "");
+		pk->found = true;
+		return false; /* fertig */
+	}
+	pk->cur++;
+	return true;
+}
+
+/* PVW auf die (index+1)-te Bus-Szene setzen (für die Preview-Slot-Hotkeys). */
+static void bank_set_preview_by_index(struct me_bank *b, int index)
+{
+	struct me_pick_scene pk = {.target = index, .cur = 0, .found = false};
+	me_scenes_enum(obs_source_get_uuid(b->source), me_pick_scene_cb, &pk);
+	if (pk.found)
+		bank_set_preview(b, pk.name);
+}
+
+static void me_bank_proc_set_preview(void *data, calldata_t *cd)
+{
+	bank_set_preview((struct me_bank *)data, calldata_string(cd, "scene"));
 }
 
 /* Program-Bus: gewählte Szene SOFORT auf Program (harter Schnitt). */
@@ -259,6 +304,16 @@ static void me_bank_hotkey_auto(void *data, obs_hotkey_id id, obs_hotkey_t *hotk
 	UNUSED_PARAMETER(hotkey);
 	if (pressed)
 		bank_auto((struct me_bank *)data);
+}
+
+/* "Preview Input N": die N-te Bus-Szene in die Vorschau der Bank schalten. */
+static void me_bank_hotkey_pvw(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey, bool pressed)
+{
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(hotkey);
+	struct me_pvw_slot *ps = data;
+	if (pressed && ps)
+		bank_set_preview_by_index(ps->bank, ps->index);
 }
 
 /* Buttons in den Eigenschaften (priv = unser me_bank via add_button2). */
@@ -355,6 +410,8 @@ static void *me_bank_create(obs_data_t *settings, obs_source_t *source)
 	b->source = source;
 	b->cut_hotkey = OBS_INVALID_HOTKEY_ID;
 	b->auto_hotkey = OBS_INVALID_HOTKEY_ID;
+	for (int i = 0; i < ME_PVW_SLOTS; i++)
+		b->pvw_hotkeys[i] = OBS_INVALID_HOTKEY_ID;
 	pthread_mutex_init(&b->mutex, NULL);
 
 	struct obs_video_info ovi;
@@ -366,10 +423,30 @@ static void *me_bank_create(obs_data_t *settings, obs_source_t *source)
 		b->cy = 1080;
 	}
 
+	/* Hotkey-NAME pro Bank eindeutig machen (UUID-Suffix), damit obs-websocket /
+	 * Companion "Trigger Hotkey by ID" (TriggerHotkeyByName) gezielt EINE Bank
+	 * schaltet — bei gleichem Namen würde sonst immer nur die erste Bank reagieren.
+	 * Die ANZEIGE in Einstellungen→Hotkeys bleibt schön (OBS stellt den aktuellen
+	 * Quellnamen voran und nutzt die Beschreibung, nicht den Namen). */
+	const char *uuid = obs_source_get_uuid(source);
+	char cut_name[160], auto_name[160];
+	snprintf(cut_name, sizeof(cut_name), ME_HOTKEY_CUT_FMT, uuid ? uuid : "");
+	snprintf(auto_name, sizeof(auto_name), ME_HOTKEY_AUTO_FMT, uuid ? uuid : "");
+
 	b->cut_hotkey =
-		obs_hotkey_register_source(source, "multime.cut", "Multi-M/E: Cut (PVW -> PGM)", me_bank_hotkey_cut, b);
-	b->auto_hotkey = obs_hotkey_register_source(source, "multime.auto", "Multi-M/E: Auto/Take (PVW -> PGM)",
+		obs_hotkey_register_source(source, cut_name, "Multi-M/E: Cut (PVW -> PGM)", me_bank_hotkey_cut, b);
+	b->auto_hotkey = obs_hotkey_register_source(source, auto_name, "Multi-M/E: Auto/Take (PVW -> PGM)",
 						    me_bank_hotkey_auto, b);
+
+	/* Feste Preview-Bus-Hotkeys "Preview Input 1..N" je Bank. */
+	for (int i = 0; i < ME_PVW_SLOTS; i++) {
+		b->pvw_slots[i].bank = b;
+		b->pvw_slots[i].index = i;
+		char nm[180], ds[64];
+		snprintf(nm, sizeof(nm), ME_HOTKEY_PVW_FMT, uuid ? uuid : "", i + 1);
+		snprintf(ds, sizeof(ds), "Multi-M/E: Preview Input %d", i + 1);
+		b->pvw_hotkeys[i] = obs_hotkey_register_source(source, nm, ds, me_bank_hotkey_pvw, &b->pvw_slots[i]);
+	}
 
 	proc_handler_t *ph = obs_source_get_proc_handler(source);
 	proc_handler_add(ph, "void cut()", me_bank_proc_cut, b);
@@ -394,6 +471,9 @@ static void me_bank_destroy(void *data)
 		obs_hotkey_unregister(b->cut_hotkey);
 	if (b->auto_hotkey != OBS_INVALID_HOTKEY_ID)
 		obs_hotkey_unregister(b->auto_hotkey);
+	for (int i = 0; i < ME_PVW_SLOTS; i++)
+		if (b->pvw_hotkeys[i] != OBS_INVALID_HOTKEY_ID)
+			obs_hotkey_unregister(b->pvw_hotkeys[i]);
 	if (b->transition) {
 		signal_handler_disconnect(obs_source_get_signal_handler(b->transition), "transition_stop",
 					  me_bank_transition_stopped, b);

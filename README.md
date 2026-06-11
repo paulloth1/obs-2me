@@ -76,7 +76,10 @@ den Vendor `multi-me` per `CallVendorRequest` gesteuert (`bank` = Quellname **od
 | `get_state` | `{ bank }` | `{ program, preview, in_transition, kind, duration }` |
 
 In **Bitfocus Companion** (OBS-Studio-Modul): Aktion **Custom Vendor Request** → Vendor
-`multi-me`, Request-Typ z. B. `cut`, Request-Daten `{"bank":"Meine M/E"}`.
+`multi-me`, Request-Typ z. B. `cut`, Request-Daten `{"bank":"Meine M/E"}`. Alternativ je Bank
+per **Trigger Hotkey by ID** (CUT/AUTO/„Preview Input 1…12").
+
+📖 Vollständige Companion-Anleitung (Requests, Hotkey-IDs, Feedback/Tally): [docs/companion.md](docs/companion.md).
 
 ## Bekannte Einschränkungen
 

@@ -20,7 +20,9 @@ the Free Software Foundation; either version 2 of the License, or
  *   set_program  { bank, scene }     -> Szene sofort auf Program (harter Schnitt)
  *   cut          { bank }            -> Cut (PVW -> PGM)
  *   auto         { bank }            -> Auto-Take (Übergang)
- *   get_banks    { }                 -> Liste aller Bänke [{name, uuid}]
+ *   get_banks    { }                 -> Liste aller Bänke
+ *                                       [{name, uuid, hotkey_cut, hotkey_auto,
+ *                                         hotkeys_preview:[{input, hotkey}]}]
  *   get_state    { bank }            -> { program, preview, in_transition, kind, duration }
  *
  * "bank" akzeptiert UUID oder Quellname.
@@ -33,8 +35,10 @@ the Free Software Foundation; either version 2 of the License, or
 #include <obs-module.h>
 #include <plugin-support.h>
 #include <string.h>
+#include <stdio.h> /* snprintf */
 
 #include "me-websocket.h"
+#include "me-bank.h" /* Hotkey-Namens-Schema (ME_HOTKEY_*_FMT, ME_PVW_SLOTS) */
 
 typedef void (*ws_request_cb)(obs_data_t *request_data, obs_data_t *response_data, void *priv_data);
 
@@ -174,9 +178,33 @@ static bool enum_banks_cb(void *param, obs_source_t *src)
 {
 	if (strcmp(obs_source_get_id(src), "multi_me_bank") == 0) {
 		obs_data_array_t *arr = param;
+		const char *uuid = obs_source_get_uuid(src);
+		if (!uuid)
+			uuid = "";
 		obs_data_t *item = obs_data_create();
 		obs_data_set_string(item, "name", obs_source_get_name(src));
-		obs_data_set_string(item, "uuid", obs_source_get_uuid(src));
+		obs_data_set_string(item, "uuid", uuid);
+
+		/* Fertige Hotkey-IDs mitliefern, damit man sie direkt in Companions
+		 * "Trigger Hotkey by ID" kopieren kann (gleiches Schema wie me-bank-source.c). */
+		char buf[200];
+		snprintf(buf, sizeof(buf), ME_HOTKEY_CUT_FMT, uuid);
+		obs_data_set_string(item, "hotkey_cut", buf);
+		snprintf(buf, sizeof(buf), ME_HOTKEY_AUTO_FMT, uuid);
+		obs_data_set_string(item, "hotkey_auto", buf);
+
+		obs_data_array_t *pvw = obs_data_array_create();
+		for (int i = 0; i < ME_PVW_SLOTS; i++) {
+			snprintf(buf, sizeof(buf), ME_HOTKEY_PVW_FMT, uuid, i + 1);
+			obs_data_t *h = obs_data_create();
+			obs_data_set_int(h, "input", i + 1);
+			obs_data_set_string(h, "hotkey", buf);
+			obs_data_array_push_back(pvw, h);
+			obs_data_release(h);
+		}
+		obs_data_set_array(item, "hotkeys_preview", pvw);
+		obs_data_array_release(pvw);
+
 		obs_data_array_push_back(arr, item);
 		obs_data_release(item);
 	}
