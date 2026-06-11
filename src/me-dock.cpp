@@ -41,6 +41,8 @@ the Free Software Foundation; either version 2 of the License, or
 #include <QSet>
 #include <QList>
 #include <QDockWidget>
+#include <QMainWindow>
+#include <QByteArray>
 
 #include <string.h>
 
@@ -283,6 +285,72 @@ static void dock_tick(DockCtx *ctx)
 	}
 }
 
+/* ---- Dock-Platzierung über Collection-Wechsel hinweg merken ------------- */
+
+/* Gemerkte Lage/Sichtbarkeit eines Bank-Docks (pro Bank-UUID, sitzungsweit).
+ * Nötig, weil wir Docks beim Collection-Wechsel entfernen und neu anlegen —
+ * ein frisch via obs_frontend_add_dock_by_id hinzugefügtes Dock wäre sonst
+ * versteckt und nicht angedockt, der Nutzer müsste es jedes Mal neu öffnen. */
+struct DockPlacement {
+	bool known = false;
+	bool floating = false;
+	bool visible = true;
+	Qt::DockWidgetArea area = Qt::RightDockWidgetArea;
+	QByteArray geometry;
+};
+static QHash<QString, DockPlacement> g_placement; /* uuid -> letzte Lage */
+
+static QMainWindow *main_window()
+{
+	return static_cast<QMainWindow *>(obs_frontend_get_main_window());
+}
+
+/* Vom Inhalts-Widget zum umschließenden QDockWidget (von OBS erzeugt) hochlaufen. */
+static QDockWidget *dock_widget_of(QWidget *root)
+{
+	QWidget *w = root;
+	while (w && !qobject_cast<QDockWidget *>(w))
+		w = w->parentWidget();
+	return qobject_cast<QDockWidget *>(w);
+}
+
+/* Aktuelle Lage merken (vor dem Entfernen aufrufen). */
+static void capture_placement(const QString &uuid, QWidget *root)
+{
+	QDockWidget *dw = dock_widget_of(root);
+	if (!dw)
+		return;
+	DockPlacement p;
+	p.known = true;
+	p.floating = dw->isFloating();
+	p.visible = dw->isVisible();
+	p.geometry = dw->saveGeometry();
+	QMainWindow *mw = main_window();
+	Qt::DockWidgetArea a = (mw && !p.floating) ? mw->dockWidgetArea(dw) : Qt::RightDockWidgetArea;
+	p.area = (a == Qt::NoDockWidgetArea) ? Qt::RightDockWidgetArea : a;
+	g_placement[uuid] = p;
+}
+
+/* Gemerkte Lage wiederherstellen; unbekannte Bank -> sichtbar + rechts andocken. */
+static void apply_placement(const QString &uuid, QWidget *root)
+{
+	QDockWidget *dw = dock_widget_of(root);
+	if (!dw)
+		return;
+	QMainWindow *mw = main_window();
+	const DockPlacement p = g_placement.value(uuid);
+	if (p.known && p.floating) {
+		dw->setFloating(true);
+		if (!p.geometry.isEmpty())
+			dw->restoreGeometry(p.geometry);
+	} else {
+		if (mw)
+			mw->addDockWidget(p.known ? p.area : Qt::RightDockWidgetArea, dw);
+		dw->setFloating(false);
+	}
+	dw->setVisible(p.known ? p.visible : true);
+}
+
 /* ---- Ein Dock für eine Bank bauen + registrieren ------------------------ */
 
 static DockCtx *build_bank_dock(const QString &uuid, const QString &name)
@@ -369,15 +437,15 @@ static DockCtx *build_bank_dock(const QString &uuid, const QString &name)
 	timer->start(200);
 
 	obs_frontend_add_dock_by_id(dock_id_for(uuid).toUtf8().constData(), name.toUtf8().constData(), root);
+
+	/* Lage erst herstellen, wenn das umschließende QDockWidget gesetzt ist. */
+	QTimer::singleShot(0, root, [uuid, root]() { apply_placement(uuid, root); });
 	return ctx;
 }
 
 static void update_dock_title(DockCtx *ctx, const QString &name)
 {
-	QWidget *w = ctx->root;
-	while (w && !qobject_cast<QDockWidget *>(w))
-		w = w->parentWidget();
-	if (auto *dw = qobject_cast<QDockWidget *>(w))
+	if (QDockWidget *dw = dock_widget_of(ctx->root))
 		dw->setWindowTitle(name);
 }
 
@@ -419,6 +487,9 @@ static void reconcile_docks()
 	for (auto it = g_docks.begin(); it != g_docks.end();) {
 		if (!present.contains(it.key())) {
 			const QString uuid = it.key();
+			/* Lage merken, bevor das Dock verschwindet (z. B. Collection-Wechsel),
+			 * damit es beim Wiederkommen an gleicher Stelle + sichtbar erscheint. */
+			capture_placement(uuid, it.value()->root);
 			it = g_docks.erase(it);
 			obs_frontend_remove_dock(dock_id_for(uuid).toUtf8().constData());
 		} else {

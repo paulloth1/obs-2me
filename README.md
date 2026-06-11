@@ -86,7 +86,7 @@ In **Bitfocus Companion** (OBS-Studio-Modul): Aktion **Custom Vendor Request** �
   X11/Wayland-Pfad fehlt, daher bleibt das Multiview-Fenster unter Linux leer. Als Workaround
   die Bank-Quelle in eine Szene legen und einen normalen OBS-Projektor verwenden.
 - **Kein eigener Audio-Mix** (Design): Audio läuft weiter über den normalen OBS-Mixer.
-- **Getestet** primär unter **Windows**; macOS/Linux werden gebaut, aber weniger ausgiebig
+- **Getestet** primär unter **macOS**; Windows/Linux werden gebaut, aber weniger ausgiebig
   erprobt.
 
 ## Aus dem Quellcode bauen

@@ -321,6 +321,34 @@ static void me_bank_update(void *data, obs_data_t *settings)
 	}
 }
 
+/* Vor dem Speichern: aktuellen Live-Zustand (PGM/PVW nach Cuts/Takes, Typ, Dauer)
+ * in die Settings schreiben — die Weak-Refs ändern sich bei Cut/Auto, ohne dass
+ * die Settings angefasst werden, sonst ginge der zuletzt geschaltete Stand verloren. */
+static void me_bank_save(void *data, obs_data_t *settings)
+{
+	struct me_bank *b = data;
+	pthread_mutex_lock(&b->mutex);
+	obs_source_t *pgm = obs_weak_source_get_source(b->pgm);
+	obs_source_t *pvw = obs_weak_source_get_source(b->pvw);
+	pthread_mutex_unlock(&b->mutex);
+
+	obs_data_set_string(settings, "pgm_scene", pgm ? obs_source_get_name(pgm) : "");
+	obs_data_set_string(settings, "pvw_scene", pvw ? obs_source_get_name(pvw) : "");
+	obs_data_set_string(settings, "transition_kind", b->transition_kind ? b->transition_kind : "fade_transition");
+	obs_data_set_int(settings, "duration_ms", (long long)b->duration_ms);
+
+	obs_source_release(pgm);
+	obs_source_release(pvw);
+}
+
+/* Nach dem Laden ALLER Quellen aufgerufen (zweiter Pass) — jetzt existieren die
+ * referenzierten Szenen, daher PGM/PVW hier (statt beim Erzeugen) auflösen. Behebt
+ * leere Bänke nach OBS-Neustart / Scene-Collection-Wechsel (Lade-Reihenfolge). */
+static void me_bank_load(void *data, obs_data_t *settings)
+{
+	me_bank_update(data, settings);
+}
+
 static void *me_bank_create(obs_data_t *settings, obs_source_t *source)
 {
 	struct me_bank *b = bzalloc(sizeof(struct me_bank));
@@ -502,6 +530,8 @@ static struct obs_source_info me_bank_info = {
 	.create = me_bank_create,
 	.destroy = me_bank_destroy,
 	.update = me_bank_update,
+	.save = me_bank_save,
+	.load = me_bank_load,
 	.get_defaults = me_bank_defaults,
 	.get_properties = me_bank_get_properties,
 	.activate = me_bank_activate,
