@@ -35,8 +35,8 @@ static bool scene_contains(obs_source_t *scene, obs_source_t *target)
 
 void me_scenes_enum(const char *exclude_bank_uuid, me_scene_cb cb, void *param)
 {
-	obs_source_t *bank =
-		(exclude_bank_uuid && *exclude_bank_uuid) ? obs_get_source_by_uuid(exclude_bank_uuid) : NULL;
+	obs_source_t *bank = (exclude_bank_uuid && *exclude_bank_uuid) ? obs_get_source_by_uuid(exclude_bank_uuid)
+								       : NULL;
 
 	struct obs_frontend_source_list scenes = {0};
 	obs_frontend_get_scenes(&scenes);

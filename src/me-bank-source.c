@@ -37,9 +37,9 @@ struct me_bank {
 	uint32_t cx, cy;          /* Ausgabegröße (= Haupt-Canvas)            */
 	uint32_t duration_ms;     /* Auto-Übergangsdauer                      */
 
-	pthread_mutex_t mutex;    /* schützt pgm/pvw/in_transition            */
-	obs_weak_source_t *pgm;   /* aktuell auf Program                      */
-	obs_weak_source_t *pvw;   /* aktuell auf Preview                      */
+	pthread_mutex_t mutex;  /* schützt pgm/pvw/in_transition            */
+	obs_weak_source_t *pgm; /* aktuell auf Program                      */
+	obs_weak_source_t *pvw; /* aktuell auf Preview                      */
 	bool in_transition;
 	uint64_t transition_end_ns; /* Wall-Clock-Ende des Auto-Übergangs     */
 
@@ -90,8 +90,7 @@ static void bank_apply_transition_kind(struct me_bank *b, const char *kind)
 		return;
 
 	obs_transition_set_size(new_tr, b->cx, b->cy);
-	signal_handler_connect(obs_source_get_signal_handler(new_tr), "transition_stop",
-			       me_bank_transition_stopped, b);
+	signal_handler_connect(obs_source_get_signal_handler(new_tr), "transition_stop", me_bank_transition_stopped, b);
 
 	obs_source_t *pgm = obs_weak_source_get_source(b->pgm);
 	if (pgm) {
@@ -145,8 +144,7 @@ static void bank_auto(struct me_bank *b)
 			b->pgm = b->pvw;
 			b->pvw = tmp;
 			b->in_transition = true;
-			b->transition_end_ns = os_gettime_ns() +
-					       (uint64_t)b->duration_ms * 1000000ULL;
+			b->transition_end_ns = os_gettime_ns() + (uint64_t)b->duration_ms * 1000000ULL;
 		}
 	}
 	pthread_mutex_unlock(&b->mutex);
@@ -154,8 +152,7 @@ static void bank_auto(struct me_bank *b)
 	/* obs_transition_start außerhalb des Locks aufrufen: bei 0 ms feuert
 	 * "transition_stop" synchron -> würde sonst den Mutex doppelt nehmen. */
 	if (dest) {
-		obs_transition_start(b->transition, OBS_TRANSITION_MODE_AUTO,
-				     b->duration_ms, dest);
+		obs_transition_start(b->transition, OBS_TRANSITION_MODE_AUTO, b->duration_ms, dest);
 		obs_source_release(dest);
 	}
 }
@@ -341,8 +338,8 @@ static void *me_bank_create(obs_data_t *settings, obs_source_t *source)
 		b->cy = 1080;
 	}
 
-	b->cut_hotkey = obs_hotkey_register_source(source, "multime.cut", "Multi-M/E: Cut (PVW -> PGM)",
-						   me_bank_hotkey_cut, b);
+	b->cut_hotkey =
+		obs_hotkey_register_source(source, "multime.cut", "Multi-M/E: Cut (PVW -> PGM)", me_bank_hotkey_cut, b);
 	b->auto_hotkey = obs_hotkey_register_source(source, "multime.auto", "Multi-M/E: Auto/Take (PVW -> PGM)",
 						    me_bank_hotkey_auto, b);
 
@@ -353,9 +350,10 @@ static void *me_bank_create(obs_data_t *settings, obs_source_t *source)
 	proc_handler_add(ph, "void set_program(in string scene)", me_bank_proc_set_program, b);
 	proc_handler_add(ph, "void set_transition(in string kind)", me_bank_proc_set_transition, b);
 	proc_handler_add(ph, "void set_duration(in int ms)", me_bank_proc_set_duration, b);
-	proc_handler_add(ph,
-			 "void get_state(out string program, out string preview, out bool in_transition, out string kind, out int duration)",
-			 me_bank_proc_get_state, b);
+	proc_handler_add(
+		ph,
+		"void get_state(out string program, out string preview, out bool in_transition, out string kind, out int duration)",
+		me_bank_proc_get_state, b);
 
 	me_bank_update(b, settings);
 	return b;
@@ -369,8 +367,8 @@ static void me_bank_destroy(void *data)
 	if (b->auto_hotkey != OBS_INVALID_HOTKEY_ID)
 		obs_hotkey_unregister(b->auto_hotkey);
 	if (b->transition) {
-		signal_handler_disconnect(obs_source_get_signal_handler(b->transition),
-					  "transition_stop", me_bank_transition_stopped, b);
+		signal_handler_disconnect(obs_source_get_signal_handler(b->transition), "transition_stop",
+					  me_bank_transition_stopped, b);
 		obs_source_release(b->transition);
 	}
 	obs_weak_source_release(b->pgm);
@@ -467,15 +465,15 @@ static obs_properties_t *me_bank_get_properties(void *data)
 	const char *uuid = b ? obs_source_get_uuid(b->source) : NULL;
 	obs_properties_t *props = obs_properties_create();
 
-	obs_property_t *pgm = obs_properties_add_list(props, "pgm_scene", "Program-Szene (PGM)",
-						      OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
-	obs_property_t *pvw = obs_properties_add_list(props, "pvw_scene", "Preview-Szene (PVW)",
-						      OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+	obs_property_t *pgm = obs_properties_add_list(props, "pgm_scene", "Program-Szene (PGM)", OBS_COMBO_TYPE_LIST,
+						      OBS_COMBO_FORMAT_STRING);
+	obs_property_t *pvw = obs_properties_add_list(props, "pvw_scene", "Preview-Szene (PVW)", OBS_COMBO_TYPE_LIST,
+						      OBS_COMBO_FORMAT_STRING);
 	me_scenes_enum(uuid, add_scene_to_list, pgm);
 	me_scenes_enum(uuid, add_scene_to_list, pvw);
 
-	obs_property_t *tk = obs_properties_add_list(props, "transition_kind", "Auto-Übergang",
-						     OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+	obs_property_t *tk = obs_properties_add_list(props, "transition_kind", "Auto-Übergang", OBS_COMBO_TYPE_LIST,
+						     OBS_COMBO_FORMAT_STRING);
 	obs_property_list_add_string(tk, "Fade", "fade_transition");
 	obs_property_list_add_string(tk, "Swipe", "swipe_transition");
 	obs_property_list_add_string(tk, "Slide", "slide_transition");

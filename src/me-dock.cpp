@@ -303,11 +303,11 @@ static DockCtx *build_bank_dock(const QString &uuid, const QString &name)
 
 	/* Tally */
 	ctx->pgmLabel = new QLabel(QStringLiteral("PGM: –"));
-	ctx->pgmLabel->setStyleSheet(QStringLiteral(
-		"background:#c0392b; color:white; padding:3px; border-radius:3px; font-weight:bold;"));
+	ctx->pgmLabel->setStyleSheet(
+		QStringLiteral("background:#c0392b; color:white; padding:3px; border-radius:3px; font-weight:bold;"));
 	ctx->pvwLabel = new QLabel(QStringLiteral("PVW: –"));
-	ctx->pvwLabel->setStyleSheet(QStringLiteral(
-		"background:#27ae60; color:white; padding:3px; border-radius:3px; font-weight:bold;"));
+	ctx->pvwLabel->setStyleSheet(
+		QStringLiteral("background:#27ae60; color:white; padding:3px; border-radius:3px; font-weight:bold;"));
 	outer->addWidget(ctx->pgmLabel);
 	outer->addWidget(ctx->pvwLabel);
 
@@ -461,4 +461,4 @@ void me_dock_register(void)
 
 	reconcile_docks();
 	obs_log(LOG_INFO, "Multi-M/E dock manager registered");
- }
+}

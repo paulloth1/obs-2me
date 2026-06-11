@@ -237,7 +237,7 @@ private:
 	std::mutex m_mutex;
 	std::vector<SceneRef> m_scenes;
 	QString m_pgmName, m_pvwName;
-	QHash<QString, QImage> m_labelImages; /* UI-Thread baut, Render liest (mutex) */
+	QHash<QString, QImage> m_labelImages;       /* UI-Thread baut, Render liest (mutex) */
 	QHash<QString, gs_texture_t *> m_textCache; /* nur Grafik-Thread */
 	QString m_sceneSig;
 	QTimer *m_timer = nullptr;
@@ -486,7 +486,8 @@ void MEMultiview::render(uint32_t cx, uint32_t cy)
 		mv_render_source(src, r.x() + b, r.y() + b, r.width() - 2 * b, r.height() - 2 * b);
 		gs_texture_t *tex = labelTexture(label);
 		if (tex)
-			mv_draw_texture(tex, r.x() + b + 2, r.y() + r.height() - (int)gs_texture_get_height(tex) - b - 2);
+			mv_draw_texture(tex, r.x() + b + 2,
+					r.y() + r.height() - (int)gs_texture_get_height(tex) - b - 2);
 	};
 
 	pane(L.pvw, pvw, green, QStringLiteral("PREVIEW"));
