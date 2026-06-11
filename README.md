@@ -85,11 +85,11 @@ via **Trigger Hotkey by ID** (CUT/AUTO/"Preview Input 1…12").
 
 ## Known limitations
 
-- **Linux: the multiview projector does not render (yet).** The plugin builds and loads on
-  Linux, and the dock, bus, CUT/AUTO, hotkeys and WebSocket control all work. The multiview
-  projector only sets the native window handle on Windows and macOS so far — the X11/Wayland
-  path is missing, so the multiview window stays blank on Linux. Workaround: place the bank
-  source in a scene and use a normal OBS projector.
+- **Linux: the multiview projector needs X11 or XWayland.** It renders on X11 and XWayland
+  sessions; under a **native Wayland** session the multiview window stays blank (a warning is
+  logged). Everything else (dock, bus, CUT/AUTO, hotkeys, recording, WebSocket) works
+  regardless. Workaround on native Wayland: place the bank source in a scene and use a normal
+  OBS projector, or start OBS under XWayland.
 - **No separate audio mix** (by design): audio keeps running through the normal OBS mixer.
   (The per-bank file recording does include the OBS main audio track.)
 - **Tested** primarily on **macOS**; Windows/Linux are built but exercised less thoroughly.

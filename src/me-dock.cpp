@@ -403,9 +403,14 @@ static DockCtx *build_bank_dock(const QString &uuid, const QString &name)
 	/* Transition: type + duration */
 	auto *transRow = new QHBoxLayout();
 	ctx->transCombo = new QComboBox();
-	ctx->transCombo->addItem(QStringLiteral("Fade"), QStringLiteral("fade_transition"));
-	ctx->transCombo->addItem(QStringLiteral("Swipe"), QStringLiteral("swipe_transition"));
-	ctx->transCombo->addItem(QStringLiteral("Slide"), QStringLiteral("slide_transition"));
+	/* All available OBS transition types (Fade / Swipe / Slide / Luma Wipe / …). */
+	const char *tid = nullptr;
+	for (size_t i = 0; obs_enum_transition_types(i, &tid); i++) {
+		if (!tid || strcmp(tid, "cut_transition") == 0)
+			continue;
+		const char *disp = obs_source_get_display_name(tid);
+		ctx->transCombo->addItem(QString::fromUtf8(disp ? disp : tid), QString::fromUtf8(tid));
+	}
 	ctx->durSpin = new QSpinBox();
 	ctx->durSpin->setRange(0, 10000);
 	ctx->durSpin->setSingleStep(50);

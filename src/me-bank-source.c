@@ -619,9 +619,14 @@ static obs_properties_t *me_bank_get_properties(void *data)
 
 	obs_property_t *tk = obs_properties_add_list(props, "transition_kind", "Auto transition", OBS_COMBO_TYPE_LIST,
 						     OBS_COMBO_FORMAT_STRING);
-	obs_property_list_add_string(tk, "Fade", "fade_transition");
-	obs_property_list_add_string(tk, "Swipe", "swipe_transition");
-	obs_property_list_add_string(tk, "Slide", "slide_transition");
+	/* All available OBS transition types (Fade / Swipe / Slide / Luma Wipe / …). */
+	const char *tid = NULL;
+	for (size_t i = 0; obs_enum_transition_types(i, &tid); i++) {
+		if (!tid || strcmp(tid, "cut_transition") == 0)
+			continue; /* "cut" is the dedicated CUT button, not an auto transition */
+		const char *disp = obs_source_get_display_name(tid);
+		obs_property_list_add_string(tk, disp ? disp : tid, tid);
+	}
 
 	obs_properties_add_int(props, "duration_ms", "Transition duration (ms)", 0, 10000, 50);
 

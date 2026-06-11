@@ -24,6 +24,7 @@ the Free Software Foundation; either version 2 of the License, or
 #include <plugin-support.h>
 
 #include <graphics/vec4.h>
+#include <util/config-file.h>
 
 #include <QWidget>
 #include <QMenu>
@@ -47,6 +48,13 @@ the Free Software Foundation; either version 2 of the License, or
 #include <QFont>
 #include <QFontMetrics>
 #include <QColor>
+#include <QContextMenuEvent>
+
+#if !defined(_WIN32) && !defined(__APPLE__)
+/* Qt6 X11 native interface (QNativeInterface::QX11Application) for the X11
+ * Display* needed by obs_display on Linux/*BSD. */
+#include <QtGui/qguiapplication_platform.h>
+#endif
 
 #include <mutex>
 #include <vector>
@@ -56,6 +64,29 @@ the Free Software Foundation; either version 2 of the License, or
 #include "me-scenes.h"
 
 static const int MV_MAX_THUMBS = 8;
+
+/* ---- Global multiview preferences (persisted in the OBS user config) ----- */
+
+static bool g_mvSwap = false;       /* swap PVW/PGM panes (some prefer it reversed) */
+static bool g_mvHideLabels = false; /* hide the PREVIEW/PROGRAM + scene-name labels */
+
+static void mv_load_prefs()
+{
+	config_t *c = obs_frontend_get_user_config();
+	if (!c)
+		return;
+	g_mvSwap = config_get_bool(c, "Multi-M/E", "MultiviewSwapPgmPvw");
+	g_mvHideLabels = config_get_bool(c, "Multi-M/E", "MultiviewHideLabels");
+}
+
+static void mv_save_pref(const char *key, bool value)
+{
+	config_t *c = obs_frontend_get_user_config();
+	if (!c)
+		return;
+	config_set_bool(c, "Multi-M/E", key, value);
+	config_save(c);
+}
 
 /* ---- Helpers: bank list + procs ----------------------------------------- */
 
@@ -209,6 +240,7 @@ protected:
 	}
 	void mousePressEvent(QMouseEvent *e) override;
 	void mouseDoubleClickEvent(QMouseEvent *e) override;
+	void contextMenuEvent(QContextMenuEvent *e) override;
 	void keyPressEvent(QKeyEvent *e) override
 	{
 		if (e->key() == Qt::Key_Escape)
@@ -233,6 +265,7 @@ private:
 
 	QString m_uuid;
 	obs_display_t *m_display = nullptr;
+	bool m_displayFailed = false; /* don't keep retrying if the platform is unsupported */
 	obs_weak_source_t *m_programWeak = nullptr;
 	std::mutex m_mutex;
 	std::vector<SceneRef> m_scenes;
@@ -307,7 +340,7 @@ void MEMultiview::clearScenes(std::vector<SceneRef> &v)
 
 void MEMultiview::createDisplay()
 {
-	if (m_display || width() <= 0 || height() <= 0 || !isVisible())
+	if (m_display || m_displayFailed || width() <= 0 || height() <= 0 || !isVisible())
 		return;
 	qreal dpr = devicePixelRatioF();
 	gs_init_data init = {};
@@ -320,6 +353,17 @@ void MEMultiview::createDisplay()
 	init.window.hwnd = (void *)winId();
 #elif defined(__APPLE__)
 	init.window.view = (id)(void *)winId();
+#else /* Linux / *BSD: X11 or XWayland */
+	if (QGuiApplication::platformName().startsWith(QStringLiteral("wayland"))) {
+		m_displayFailed = true;
+		obs_log(LOG_WARNING, "Multi-M/E multiview needs an X11 or XWayland session "
+				     "(native Wayland is not supported); the window stays blank");
+		return;
+	}
+	init.window.id = (uint32_t)winId();
+	init.window.display = nullptr;
+	if (auto *x11App = qGuiApp->nativeInterface<QNativeInterface::QX11Application>())
+		init.window.display = (void *)x11App->display();
 #endif
 	m_display = obs_display_create(&init, 0x111111);
 	if (m_display)
@@ -484,14 +528,22 @@ void MEMultiview::render(uint32_t cx, uint32_t cy)
 		mv_draw_box(r.x(), r.y(), r.width(), r.height(), border);
 		mv_draw_box(r.x() + b, r.y() + b, r.width() - 2 * b, r.height() - 2 * b, black);
 		mv_render_source(src, r.x() + b, r.y() + b, r.width() - 2 * b, r.height() - 2 * b);
+		if (g_mvHideLabels)
+			return;
 		gs_texture_t *tex = labelTexture(label);
 		if (tex)
 			mv_draw_texture(tex, r.x() + b + 2,
 					r.y() + r.height() - (int)gs_texture_get_height(tex) - b - 2);
 	};
 
-	pane(L.pvw, pvw, green, QStringLiteral("PREVIEW"));
-	pane(L.pgm, pgm, red, QStringLiteral("PROGRAM"));
+	/* Top row: by default PVW left / PGM right; swapped if the user prefers it. */
+	if (g_mvSwap) {
+		pane(L.pvw, pgm, red, QStringLiteral("PROGRAM"));
+		pane(L.pgm, pvw, green, QStringLiteral("PREVIEW"));
+	} else {
+		pane(L.pvw, pvw, green, QStringLiteral("PREVIEW"));
+		pane(L.pgm, pgm, red, QStringLiteral("PROGRAM"));
+	}
 
 	for (int i = 0; i < L.thumbs.size() && i < (int)items.size(); i++) {
 		const struct vec4 &bc = (items[i].name == pgmN) ? red : (items[i].name == pvwN) ? green : gray;
@@ -535,6 +587,26 @@ void MEMultiview::mouseDoubleClickEvent(QMouseEvent *e)
 	if (thumbAt(e->pos(), name) >= 0) {
 		mv_set_preview(m_uuid, name);
 		mv_auto(m_uuid);
+	}
+}
+
+void MEMultiview::contextMenuEvent(QContextMenuEvent *e)
+{
+	QMenu menu(this);
+	QAction *aSwap = menu.addAction(QStringLiteral("Swap Preview/Program"));
+	aSwap->setCheckable(true);
+	aSwap->setChecked(g_mvSwap);
+	QAction *aLabels = menu.addAction(QStringLiteral("Show labels"));
+	aLabels->setCheckable(true);
+	aLabels->setChecked(!g_mvHideLabels);
+
+	QAction *chosen = menu.exec(e->globalPos());
+	if (chosen == aSwap) {
+		g_mvSwap = aSwap->isChecked();
+		mv_save_pref("MultiviewSwapPgmPvw", g_mvSwap);
+	} else if (chosen == aLabels) {
+		g_mvHideLabels = !aLabels->isChecked();
+		mv_save_pref("MultiviewHideLabels", g_mvHideLabels);
 	}
 }
 
@@ -594,6 +666,7 @@ static void mv_on_frontend_event(enum obs_frontend_event event, void *data)
 
 void me_multiview_register(void)
 {
+	mv_load_prefs();
 	QAction *act = static_cast<QAction *>(obs_frontend_add_tools_menu_qaction("Multi-M/E Multiview"));
 	if (act) {
 		QMenu *menu = new QMenu();
