@@ -112,9 +112,24 @@ Just copy the desired `hotkey` string into Companion's **Trigger Hotkey by ID** 
 
 ## 5. Feedback (tally on the buttons)
 
-Companion has **no built-in feedbacks for custom vendor requests**. You can, however,
-reliably emulate a tally using Companion's own **custom variables**: the button remembers
-what it switched, and a feedback colors it accordingly.
+### Real tally via vendor events (recommended)
+
+The plugin **emits a vendor event** `state_#<N>` for bank *N* on every change, carrying the
+current preview/program **bus input** (`pvw_in`, `pgm_in`, 1-based; `0` = none) and `rec`.
+Companion's **VendorEvent feedback** latches on the last matching event, so a button can show
+the live state of the selected bank:
+
+- *OBS module → feedback “VendorEvent”*: vendor `multi-me`, event type
+  `state_$(internal:custom_me)`, data key `pvw_in` (or `pgm_in`), data value the button's input
+  number → e.g. green when that input is the live preview.
+
+This reflects the **real** OBS state, including switching done via the dock, multiview or OBS
+hotkeys. The bundled Stream Deck XL page already wires this for the PGM/PVW rows.
+
+### Alternative: custom-variable mirror
+
+Without vendor events you can also emulate a tally using Companion's own **custom variables**:
+the button remembers what it switched, and a feedback colors it accordingly.
 
 ### Example: preview tally (the active preview button lights up)
 

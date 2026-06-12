@@ -30,5 +30,12 @@ The four **M/E** buttons select the active bank (the selected one lights up gree
 hard-cuts the N-th bus scene to program; **PVW** loads it to preview; **Fade/Swipe** set the
 transition type and **200/400 ms** its duration; **CUT/AUTO** perform the take.
 
+**Live tally:** the PGM/PVW rows light up to show the selected bank's real preview (green) and
+program (red) input via `VendorEvent` feedbacks (`state_#N` events from the plugin) — this
+reflects switching done anywhere (dock, multiview, hotkeys), not just from Companion.
+
+> Tip: to skip creating the `me` variable by hand, tick **“Create if not exists”** on each of
+> the four M/E selector buttons' *Set Custom Variable* action.
+
 See [../docs/companion.md](../docs/companion.md) for the full request reference and the
 custom-variable tally pattern.

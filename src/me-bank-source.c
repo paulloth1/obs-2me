@@ -31,6 +31,7 @@ the Free Software Foundation; either version 2 of the License, or
 #include "me-bank.h"
 #include "me-scenes.h"
 #include "me-output.h"
+#include "me-websocket.h" /* emit per-bank state events (control-surface tally) */
 
 struct me_bank;
 
@@ -144,6 +145,7 @@ static void bank_cut(struct me_bank *b)
 		obs_transition_set(b->transition, dest);
 		obs_source_release(dest);
 	}
+	me_websocket_emit_bank_state(b->source);
 }
 
 /* AUTO/Take: timed transition PVW -> PGM. */
@@ -169,6 +171,7 @@ static void bank_auto(struct me_bank *b)
 		obs_transition_start(b->transition, OBS_TRANSITION_MODE_AUTO, b->duration_ms, dest);
 		obs_source_release(dest);
 	}
+	me_websocket_emit_bank_state(b->source);
 }
 
 /* ---- Proc-handler interface (bridge to the Qt dock) ---- */
@@ -194,6 +197,7 @@ static void bank_set_preview(struct me_bank *b, const char *scene)
 	obs_data_t *s = obs_source_get_settings(b->source);
 	obs_data_set_string(s, "pvw_scene", scene ? scene : "");
 	obs_data_release(s);
+	me_websocket_emit_bank_state(b->source);
 }
 
 /* Find the index-th scene (0-based) of the filtered bus list. */
@@ -256,6 +260,7 @@ static void bank_set_program(struct me_bank *b, const char *scene)
 	obs_data_t *s = obs_source_get_settings(b->source);
 	obs_data_set_string(s, "pgm_scene", scene ? scene : "");
 	obs_data_release(s);
+	me_websocket_emit_bank_state(b->source);
 }
 
 /* Set program to the (index+1)-th bus scene (1-based input for control surfaces). */
@@ -309,6 +314,7 @@ static void me_bank_proc_start_record(void *data, calldata_t *cd)
 	bool ok = me_output_start(b->output);
 	calldata_set_bool(cd, "recording", me_output_active(b->output));
 	calldata_set_bool(cd, "ok", ok);
+	me_websocket_emit_bank_state(b->source);
 }
 
 static void me_bank_proc_stop_record(void *data, calldata_t *cd)
@@ -316,6 +322,7 @@ static void me_bank_proc_stop_record(void *data, calldata_t *cd)
 	struct me_bank *b = data;
 	me_output_stop(b->output);
 	calldata_set_bool(cd, "recording", me_output_active(b->output));
+	me_websocket_emit_bank_state(b->source);
 }
 
 static void me_bank_proc_toggle_record(void *data, calldata_t *cd)
@@ -326,6 +333,7 @@ static void me_bank_proc_toggle_record(void *data, calldata_t *cd)
 	else
 		me_output_start(b->output);
 	calldata_set_bool(cd, "recording", me_output_active(b->output));
+	me_websocket_emit_bank_state(b->source);
 }
 
 static void me_bank_proc_get_state(void *data, calldata_t *cd)
@@ -432,6 +440,7 @@ static void me_bank_update(void *data, obs_data_t *settings)
 			obs_source_release(pgm);
 		}
 	}
+	me_websocket_emit_bank_state(b->source);
 }
 
 /* Before saving: write the current live state (PGM/PVW after cuts/takes, type,

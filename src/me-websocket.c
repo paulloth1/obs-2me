@@ -47,7 +47,8 @@ the Free Software Foundation; either version 2 of the License, or
 #include <stdlib.h> /* atoi */
 
 #include "me-websocket.h"
-#include "me-bank.h" /* hotkey naming scheme (ME_HOTKEY_*_FMT, ME_PVW_SLOTS) */
+#include "me-bank.h"   /* hotkey naming scheme (ME_HOTKEY_*_FMT, ME_PVW_SLOTS) */
+#include "me-scenes.h" /* me_scenes_enum (bus order for state events) */
 
 typedef void (*ws_request_cb)(obs_data_t *request_data, obs_data_t *response_data, void *priv_data);
 
@@ -388,6 +389,109 @@ static void req_get_state(obs_data_t *req, obs_data_t *res, void *priv)
 	obs_source_release(b);
 }
 
+/* ---- Vendor events (state tally) ---------------------------------------- */
+/*
+ * On every bank state change we emit a per-bank event "state_#<N>" (N = the
+ * bank's 1-based position, same order as the "#N" addressing) carrying the
+ * current preview/program bus input (1-based, 0 = none) and recording flag.
+ * Companion's "VendorEvent" feedback latches on the last matching event, so a
+ * page can light the live PVW/PGM input of the selected bank.
+ */
+
+static void *g_vendor = NULL;
+static proc_handler_t *g_api_ph = NULL;
+
+struct pos_ctx {
+	const char *uuid;
+	int cur;
+	int pos;
+};
+static bool pos_cb(void *p, obs_source_t *src)
+{
+	if (strcmp(obs_source_get_id(src), "multi_me_bank") != 0)
+		return true;
+	struct pos_ctx *c = p;
+	c->cur++;
+	if (c->uuid && strcmp(obs_source_get_uuid(src), c->uuid) == 0) {
+		c->pos = c->cur;
+		return false;
+	}
+	return true;
+}
+
+struct sidx_ctx {
+	const char *name;
+	int cur;
+	int found;
+};
+static bool sidx_cb(void *p, const char *name, obs_source_t *scene)
+{
+	UNUSED_PARAMETER(scene);
+	struct sidx_ctx *c = p;
+	c->cur++;
+	if (c->name && strcmp(name, c->name) == 0) {
+		c->found = c->cur;
+		return false;
+	}
+	return true;
+}
+
+/* Runs on the UI thread (obs_frontend_* / scene enumeration are UI-thread). */
+static void emit_task(void *param)
+{
+	obs_source_t *bank = param;
+	if (g_vendor && g_api_ph) {
+		struct pos_ctx pc = {obs_source_get_uuid(bank), 0, 0};
+		obs_enum_sources(pos_cb, &pc);
+		if (pc.pos >= 1) {
+			calldata_t st;
+			calldata_init(&st);
+			proc_handler_call(obs_source_get_proc_handler(bank), "get_state", &st);
+			const char *program = calldata_string(&st, "program");
+			const char *preview = calldata_string(&st, "preview");
+			bool rec = calldata_bool(&st, "recording");
+
+			struct sidx_ctx pv = {preview, 0, 0};
+			struct sidx_ctx pg = {program, 0, 0};
+			if (preview && *preview)
+				me_scenes_enum(pc.uuid, sidx_cb, &pv);
+			if (program && *program)
+				me_scenes_enum(pc.uuid, sidx_cb, &pg);
+			calldata_free(&st);
+
+			obs_data_t *data = obs_data_create();
+			char b[16];
+			snprintf(b, sizeof(b), "%d", pv.found);
+			obs_data_set_string(data, "pvw_in", b);
+			snprintf(b, sizeof(b), "%d", pg.found);
+			obs_data_set_string(data, "pgm_in", b);
+			obs_data_set_string(data, "rec", rec ? "1" : "0");
+
+			char type[32];
+			snprintf(type, sizeof(type), "state_#%d", pc.pos);
+			calldata_t cd;
+			calldata_init(&cd);
+			calldata_set_ptr(&cd, "vendor", g_vendor);
+			calldata_set_string(&cd, "type", type);
+			calldata_set_ptr(&cd, "data", data);
+			proc_handler_call(g_api_ph, "vendor_event_emit", &cd);
+			calldata_free(&cd);
+			obs_data_release(data);
+		}
+	}
+	obs_source_release(bank);
+}
+
+void me_websocket_emit_bank_state(obs_source_t *bank)
+{
+	if (!g_vendor || !bank)
+		return;
+	obs_source_t *ref = obs_source_get_ref(bank);
+	if (!ref)
+		return;
+	obs_queue_task(OBS_TASK_UI, emit_task, ref, false);
+}
+
 /* ---- Registration -------------------------------------------------------- */
 
 void me_websocket_register(void)
@@ -402,6 +506,8 @@ void me_websocket_register(void)
 		obs_log(LOG_WARNING, "failed to register obs-websocket vendor 'multi-me'");
 		return;
 	}
+	g_api_ph = ph;
+	g_vendor = vendor;
 	ws_register_request(ph, vendor, "set_preview", req_set_preview);
 	ws_register_request(ph, vendor, "set_preview_index", req_set_preview_index);
 	ws_register_request(ph, vendor, "set_program", req_set_program);
