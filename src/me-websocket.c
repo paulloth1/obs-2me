@@ -22,6 +22,8 @@ the Free Software Foundation; either version 2 of the License, or
  *   set_program_index  { bank, input } -> N-th bus scene (1-based) to program
  *   cut          { bank }            -> Cut (PVW -> PGM)
  *   auto         { bank }            -> Auto-Take (transition)
+ *   set_transition { bank, kind }    -> set the auto transition type
+ *   set_duration   { bank, ms }      -> set the auto transition duration (ms)
  *   get_banks    { }                 -> list of all banks
  *                                       [{name, uuid, hotkey_cut, hotkey_auto,
  *                                         hotkeys_preview:[{input, hotkey}]}]
@@ -281,6 +283,40 @@ static void req_stop_record(obs_data_t *req, obs_data_t *res, void *priv)
 	obs_source_release(b);
 }
 
+static void req_set_transition(obs_data_t *req, obs_data_t *res, void *priv)
+{
+	UNUSED_PARAMETER(priv);
+	obs_source_t *b = resolve_bank(req);
+	if (!b) {
+		fail(res, "bank not found");
+		return;
+	}
+	calldata_t cd;
+	calldata_init(&cd);
+	calldata_set_string(&cd, "kind", obs_data_get_string(req, "kind"));
+	proc_handler_call(obs_source_get_proc_handler(b), "set_transition", &cd);
+	calldata_free(&cd);
+	obs_data_set_bool(res, "success", true);
+	obs_source_release(b);
+}
+
+static void req_set_duration(obs_data_t *req, obs_data_t *res, void *priv)
+{
+	UNUSED_PARAMETER(priv);
+	obs_source_t *b = resolve_bank(req);
+	if (!b) {
+		fail(res, "bank not found");
+		return;
+	}
+	calldata_t cd;
+	calldata_init(&cd);
+	calldata_set_int(&cd, "ms", obs_data_get_int(req, "ms"));
+	proc_handler_call(obs_source_get_proc_handler(b), "set_duration", &cd);
+	calldata_free(&cd);
+	obs_data_set_bool(res, "success", true);
+	obs_source_release(b);
+}
+
 static bool enum_banks_cb(void *param, obs_source_t *src)
 {
 	if (strcmp(obs_source_get_id(src), "multi_me_bank") == 0) {
@@ -372,9 +408,11 @@ void me_websocket_register(void)
 	ws_register_request(ph, vendor, "set_program_index", req_set_program_index);
 	ws_register_request(ph, vendor, "cut", req_cut);
 	ws_register_request(ph, vendor, "auto", req_auto);
+	ws_register_request(ph, vendor, "set_transition", req_set_transition);
+	ws_register_request(ph, vendor, "set_duration", req_set_duration);
 	ws_register_request(ph, vendor, "get_banks", req_get_banks);
 	ws_register_request(ph, vendor, "get_state", req_get_state);
 	ws_register_request(ph, vendor, "start_record", req_start_record);
 	ws_register_request(ph, vendor, "stop_record", req_stop_record);
-	obs_log(LOG_INFO, "obs-websocket vendor 'multi-me' registered (10 requests)");
+	obs_log(LOG_INFO, "obs-websocket vendor 'multi-me' registered (12 requests)");
 }
