@@ -163,41 +163,24 @@ Companion, the variable mirror is reliable.
 
 ## 6. Stream Deck XL example page (8 × 4)
 
-A ready-made layout that fits a **Stream Deck XL** (8 columns × 4 rows) and controls **any**
-of the first four banks via a selector — no scene names or UUIDs needed (all buttons address
-the bank through the `#N` selector).
-
-Create one **custom variable** `me` (its value is the selected bank, e.g. `#1`). Every control
-button passes `"bank":"$(internal:custom_me)"`.
+A ready-to-import page is included: **[`companion/multi-me-streamdeck-xl.companionconfig`](https://github.com/paulloth1/multi-me/tree/main/companion)**
+(also attached to each release). It controls **any of the first four banks** through a selector
+(`#N` addressing — no scene names or UUIDs needed), with tally on every button.
 
 ```
-Col      1        2        3        4        5        6        7        8
-Row 1  In 1     In 2     In 3     In 4     In 5     In 6     In 7     In 8     ← preview bus
-Row 2  CUT      AUTO     Fade     Fade      —        —        —       REC
-                         200 ms   400 ms                               (start/stop)
-Row 3  ME 1     ME 2     ME 3     ME 4      —        —        —        —       ← bank selector
-Row 4   —        —        —        —        —        —        —        —
+Row 1  M/E 2..5            ← bank selector (#1..#4), selected = green
+Row 2  PGM 1..8            ← hard-cut to program, live input = red
+Row 3  PVW 1..8            ← load to preview, live input = green
+Row 4  Fade Swipe 200 400  CUT  AUTO   ← type/duration (active = blue) + take
 ```
 
-Per button:
+Every control button sends a vendor request with `"bank":"$(internal:custom_me)"`. The
+*Set Custom Variable* actions use **“Create if not exists”**, so the variables (`me`, `me_pvw`,
+`me_pgm`, `me_trans`, `me_dur`) are created automatically — nothing to set up by hand.
 
-- **In 1…8** — action *Custom Vendor Request*: vendor `multi-me`, type `set_preview_index`,
-  data `{"bank":"$(internal:custom_me)","input":N}`. Optional preview tally: also
-  *Set Custom Variable* `me_pvw` = `N`, and a feedback `me_pvw == N` → green (mirror, see §5).
-- **CUT** — `cut`, data `{"bank":"$(internal:custom_me)"}`.
-- **AUTO** — `auto`, data `{"bank":"$(internal:custom_me)"}`.
-- **Fade 200 ms** — two actions: `set_transition` `{"bank":"$(internal:custom_me)","kind":"fade_transition"}`
-  then `set_duration` `{"bank":"$(internal:custom_me)","ms":200}`.
-- **Fade 400 ms** — same with `"ms":400`.
-- **REC** — a 2-step button: step 1 `start_record`, step 2 `stop_record` (both
-  `{"bank":"$(internal:custom_me)"}`).
-- **ME 1…4** — *Set Custom Variable* `me` = `#1` … `#4`. Feedback *Check Custom Variable*
-  `me == #N` → green, so the selected bank lights up.
-
-> A ready-to-import `.companionconfig` for this page lives in
-> [`companion/`](https://github.com/paulloth1/multi-me/tree/main/companion) (and is attached to
-> each release). Create a custom variable `me` = `#1`, import the file, then map it to your OBS
-> connection — see [`companion/README.md`](https://github.com/paulloth1/multi-me/blob/main/companion/README.md).
+**Step-by-step setup and a per-button reference are in
+[`companion/README.md`](https://github.com/paulloth1/multi-me/blob/main/companion/README.md).**
+The tally is the custom-variable mirror from §5 (reflects switching done through Companion).
 
 ---
 
