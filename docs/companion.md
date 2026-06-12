@@ -175,9 +175,10 @@ Per button:
 - **ME 1…4** — *Set Custom Variable* `me` = `#1` … `#4`. Feedback *Check Custom Variable*
   `me == #N` → green, so the selected bank lights up.
 
-> A ready-to-import `.companionconfig` for this page is being prepared in
-> [`companion/`](https://github.com/paulloth1/multi-me/tree/main/companion). Until then, the
-> layout above can be rebuilt in a few minutes.
+> A ready-to-import `.companionconfig` for this page lives in
+> [`companion/`](https://github.com/paulloth1/multi-me/tree/main/companion) (and is attached to
+> each release). Create a custom variable `me` = `#1`, import the file, then map it to your OBS
+> connection — see [`companion/README.md`](https://github.com/paulloth1/multi-me/blob/main/companion/README.md).
 
 ---
 

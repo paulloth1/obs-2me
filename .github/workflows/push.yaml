@@ -55,6 +55,13 @@ jobs:
             *) echo 'validTag=false' >> $GITHUB_OUTPUT ;;
           esac
 
+      - name: Checkout Extra Assets 📦
+        if: fromJSON(steps.check.outputs.validTag)
+        uses: actions/checkout@v4
+        with:
+          path: repo
+          sparse-checkout: companion
+
       - name: Download Build Artifacts 📥
         uses: actions/download-artifact@v4
         if: fromJSON(steps.check.outputs.validTag)
@@ -117,3 +124,4 @@ jobs:
             ${{ github.workspace }}/*.deb
             ${{ github.workspace }}/*.ddeb
             ${{ github.workspace }}/*.tar.xz
+            ${{ github.workspace }}/repo/companion/*.companionconfig

@@ -19,6 +19,7 @@ the Free Software Foundation; either version 2 of the License, or
  *   set_preview        { bank, scene } -> scene into the bank's preview
  *   set_preview_index  { bank, input } -> N-th bus scene (1-based) into preview
  *   set_program        { bank, scene } -> scene straight to program (hard cut)
+ *   set_program_index  { bank, input } -> N-th bus scene (1-based) to program
  *   cut          { bank }            -> Cut (PVW -> PGM)
  *   auto         { bank }            -> Auto-Take (transition)
  *   get_banks    { }                 -> list of all banks
@@ -203,6 +204,23 @@ static void req_set_program(obs_data_t *req, obs_data_t *res, void *priv)
 	obs_source_release(b);
 }
 
+static void req_set_program_index(obs_data_t *req, obs_data_t *res, void *priv)
+{
+	UNUSED_PARAMETER(priv);
+	obs_source_t *b = resolve_bank(req);
+	if (!b) {
+		fail(res, "bank not found");
+		return;
+	}
+	calldata_t cd;
+	calldata_init(&cd);
+	calldata_set_int(&cd, "input", obs_data_get_int(req, "input"));
+	proc_handler_call(obs_source_get_proc_handler(b), "set_program_index", &cd);
+	calldata_free(&cd);
+	obs_data_set_bool(res, "success", true);
+	obs_source_release(b);
+}
+
 static void req_cut(obs_data_t *req, obs_data_t *res, void *priv)
 {
 	UNUSED_PARAMETER(priv);
@@ -351,11 +369,12 @@ void me_websocket_register(void)
 	ws_register_request(ph, vendor, "set_preview", req_set_preview);
 	ws_register_request(ph, vendor, "set_preview_index", req_set_preview_index);
 	ws_register_request(ph, vendor, "set_program", req_set_program);
+	ws_register_request(ph, vendor, "set_program_index", req_set_program_index);
 	ws_register_request(ph, vendor, "cut", req_cut);
 	ws_register_request(ph, vendor, "auto", req_auto);
 	ws_register_request(ph, vendor, "get_banks", req_get_banks);
 	ws_register_request(ph, vendor, "get_state", req_get_state);
 	ws_register_request(ph, vendor, "start_record", req_start_record);
 	ws_register_request(ph, vendor, "stop_record", req_stop_record);
-	obs_log(LOG_INFO, "obs-websocket vendor 'multi-me' registered (9 requests)");
+	obs_log(LOG_INFO, "obs-websocket vendor 'multi-me' registered (10 requests)");
 }

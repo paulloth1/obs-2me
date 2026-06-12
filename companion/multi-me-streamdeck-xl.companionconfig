@@ -1,0 +1,1470 @@
+{
+	"version": 12,
+	"type": "page",
+	"companionBuild": "4.3.4+9244-stable-c14e5e3334",
+	"page": {
+		"id": "dsL2N-a09_QfB1CrXaZSp",
+		"name": "Multi-M/E",
+		"controls": {
+			"0": {
+				"0": {
+					"type": "button",
+					"style": {
+						"text": "M/E 2",
+						"textExpression": false,
+						"size": "18",
+						"png64": null,
+						"alignment": "center:center",
+						"pngalignment": "center:center",
+						"color": 16777215,
+						"bgcolor": 3426654,
+						"show_topbar": "default"
+					},
+					"options": {
+						"stepProgression": "auto",
+						"stepExpression": "",
+						"rotaryActions": false
+					},
+					"feedbacks": [
+						{
+							"id": "s4EKnuxpKHQGDOXX0QfA5",
+							"definitionId": "variable_value",
+							"connectionId": "internal",
+							"options": {
+								"variable": "internal:custom_me",
+								"op": "eq",
+								"value": "#1"
+							},
+							"style": {
+								"bgcolor": 3066993
+							},
+							"isInverted": false,
+							"type": "boolean"
+						}
+					],
+					"steps": {
+						"0": {
+							"action_sets": {
+								"down": [
+									{
+										"id": "S4AwOuV0tPEN34K-so_yl",
+										"definitionId": "custom_variable_set_value",
+										"connectionId": "internal",
+										"options": {
+											"name": "me",
+											"value": "#1"
+										},
+										"type": "action"
+									}
+								],
+								"up": []
+							},
+							"options": {
+								"runWhileHeld": []
+							}
+						}
+					},
+					"localVariables": []
+				},
+				"1": {
+					"type": "button",
+					"style": {
+						"text": "M/E 3",
+						"textExpression": false,
+						"size": "18",
+						"png64": null,
+						"alignment": "center:center",
+						"pngalignment": "center:center",
+						"color": 16777215,
+						"bgcolor": 3426654,
+						"show_topbar": "default"
+					},
+					"options": {
+						"stepProgression": "auto",
+						"stepExpression": "",
+						"rotaryActions": false
+					},
+					"feedbacks": [
+						{
+							"id": "htre3sSk80kgNr5pWhPBE",
+							"definitionId": "variable_value",
+							"connectionId": "internal",
+							"options": {
+								"variable": "internal:custom_me",
+								"op": "eq",
+								"value": "#2"
+							},
+							"style": {
+								"bgcolor": 3066993
+							},
+							"isInverted": false,
+							"type": "boolean"
+						}
+					],
+					"steps": {
+						"0": {
+							"action_sets": {
+								"down": [
+									{
+										"id": "4wJncKIvxA75qJD-v-AjN",
+										"definitionId": "custom_variable_set_value",
+										"connectionId": "internal",
+										"options": {
+											"name": "me",
+											"value": "#2"
+										},
+										"type": "action"
+									}
+								],
+								"up": []
+							},
+							"options": {
+								"runWhileHeld": []
+							}
+						}
+					},
+					"localVariables": []
+				},
+				"2": {
+					"type": "button",
+					"style": {
+						"text": "M/E 4",
+						"textExpression": false,
+						"size": "18",
+						"png64": null,
+						"alignment": "center:center",
+						"pngalignment": "center:center",
+						"color": 16777215,
+						"bgcolor": 3426654,
+						"show_topbar": "default"
+					},
+					"options": {
+						"stepProgression": "auto",
+						"stepExpression": "",
+						"rotaryActions": false
+					},
+					"feedbacks": [
+						{
+							"id": "YF9mNJs_1scUsvbz113gV",
+							"definitionId": "variable_value",
+							"connectionId": "internal",
+							"options": {
+								"variable": "internal:custom_me",
+								"op": "eq",
+								"value": "#3"
+							},
+							"style": {
+								"bgcolor": 3066993
+							},
+							"isInverted": false,
+							"type": "boolean"
+						}
+					],
+					"steps": {
+						"0": {
+							"action_sets": {
+								"down": [
+									{
+										"id": "OZuM2avgKdVrPupABS-El",
+										"definitionId": "custom_variable_set_value",
+										"connectionId": "internal",
+										"options": {
+											"name": "me",
+											"value": "#3"
+										},
+										"type": "action"
+									}
+								],
+								"up": []
+							},
+							"options": {
+								"runWhileHeld": []
+							}
+						}
+					},
+					"localVariables": []
+				},
+				"3": {
+					"type": "button",
+					"style": {
+						"text": "M/E 5",
+						"textExpression": false,
+						"size": "18",
+						"png64": null,
+						"alignment": "center:center",
+						"pngalignment": "center:center",
+						"color": 16777215,
+						"bgcolor": 3426654,
+						"show_topbar": "default"
+					},
+					"options": {
+						"stepProgression": "auto",
+						"stepExpression": "",
+						"rotaryActions": false
+					},
+					"feedbacks": [
+						{
+							"id": "crg7YtZs2Zr-8BNH07mpW",
+							"definitionId": "variable_value",
+							"connectionId": "internal",
+							"options": {
+								"variable": "internal:custom_me",
+								"op": "eq",
+								"value": "#4"
+							},
+							"style": {
+								"bgcolor": 3066993
+							},
+							"isInverted": false,
+							"type": "boolean"
+						}
+					],
+					"steps": {
+						"0": {
+							"action_sets": {
+								"down": [
+									{
+										"id": "wd9XQ6g8q6AhT753-eboq",
+										"definitionId": "custom_variable_set_value",
+										"connectionId": "internal",
+										"options": {
+											"name": "me",
+											"value": "#4"
+										},
+										"type": "action"
+									}
+								],
+								"up": []
+							},
+							"options": {
+								"runWhileHeld": []
+							}
+						}
+					},
+					"localVariables": []
+				}
+			},
+			"1": {
+				"0": {
+					"type": "button",
+					"style": {
+						"text": "PGM\\n1",
+						"textExpression": false,
+						"size": "14",
+						"png64": null,
+						"alignment": "center:center",
+						"pngalignment": "center:center",
+						"color": 16777215,
+						"bgcolor": 6689041,
+						"show_topbar": "default"
+					},
+					"options": {
+						"stepProgression": "auto",
+						"stepExpression": "",
+						"rotaryActions": false
+					},
+					"feedbacks": [],
+					"steps": {
+						"0": {
+							"action_sets": {
+								"down": [
+									{
+										"id": "fzMoWtKdTzWLWEWqueeBb",
+										"definitionId": "vendorRequest",
+										"connectionId": "KzQCN7rzUIOMOK0Yjqmcw",
+										"options": {
+											"vendorName": {
+												"value": "multi-me",
+												"isExpression": false
+											},
+											"requestType": {
+												"value": "set_program_index",
+												"isExpression": false
+											},
+											"requestData": {
+												"value": "{\"bank\":\"$(internal:custom_me)\",\"input\":1}",
+												"isExpression": false
+											}
+										},
+										"upgradeIndex": 7,
+										"type": "action"
+									}
+								],
+								"up": []
+							},
+							"options": {
+								"runWhileHeld": []
+							}
+						}
+					},
+					"localVariables": []
+				},
+				"1": {
+					"type": "button",
+					"style": {
+						"text": "PGM\\n2",
+						"textExpression": false,
+						"size": "14",
+						"png64": null,
+						"alignment": "center:center",
+						"pngalignment": "center:center",
+						"color": 16777215,
+						"bgcolor": 6689041,
+						"show_topbar": "default"
+					},
+					"options": {
+						"stepProgression": "auto",
+						"stepExpression": "",
+						"rotaryActions": false
+					},
+					"feedbacks": [],
+					"steps": {
+						"0": {
+							"action_sets": {
+								"down": [
+									{
+										"id": "AToBANuwmr5UYaLXI9yUS",
+										"definitionId": "vendorRequest",
+										"connectionId": "KzQCN7rzUIOMOK0Yjqmcw",
+										"options": {
+											"vendorName": {
+												"value": "multi-me",
+												"isExpression": false
+											},
+											"requestType": {
+												"value": "set_program_index",
+												"isExpression": false
+											},
+											"requestData": {
+												"value": "{\"bank\":\"$(internal:custom_me)\",\"input\":2}",
+												"isExpression": false
+											}
+										},
+										"upgradeIndex": 7,
+										"type": "action"
+									}
+								],
+								"up": []
+							},
+							"options": {
+								"runWhileHeld": []
+							}
+						}
+					},
+					"localVariables": []
+				},
+				"2": {
+					"type": "button",
+					"style": {
+						"text": "PGM\\n3",
+						"textExpression": false,
+						"size": "14",
+						"png64": null,
+						"alignment": "center:center",
+						"pngalignment": "center:center",
+						"color": 16777215,
+						"bgcolor": 6689041,
+						"show_topbar": "default"
+					},
+					"options": {
+						"stepProgression": "auto",
+						"stepExpression": "",
+						"rotaryActions": false
+					},
+					"feedbacks": [],
+					"steps": {
+						"0": {
+							"action_sets": {
+								"down": [
+									{
+										"id": "eQ__HVBVlzkKcWbG4skQo",
+										"definitionId": "vendorRequest",
+										"connectionId": "KzQCN7rzUIOMOK0Yjqmcw",
+										"options": {
+											"vendorName": {
+												"value": "multi-me",
+												"isExpression": false
+											},
+											"requestType": {
+												"value": "set_program_index",
+												"isExpression": false
+											},
+											"requestData": {
+												"value": "{\"bank\":\"$(internal:custom_me)\",\"input\":3}",
+												"isExpression": false
+											}
+										},
+										"upgradeIndex": 7,
+										"type": "action"
+									}
+								],
+								"up": []
+							},
+							"options": {
+								"runWhileHeld": []
+							}
+						}
+					},
+					"localVariables": []
+				},
+				"3": {
+					"type": "button",
+					"style": {
+						"text": "PGM\\n4",
+						"textExpression": false,
+						"size": "14",
+						"png64": null,
+						"alignment": "center:center",
+						"pngalignment": "center:center",
+						"color": 16777215,
+						"bgcolor": 6689041,
+						"show_topbar": "default"
+					},
+					"options": {
+						"stepProgression": "auto",
+						"stepExpression": "",
+						"rotaryActions": false
+					},
+					"feedbacks": [],
+					"steps": {
+						"0": {
+							"action_sets": {
+								"down": [
+									{
+										"id": "h2aVYWVhbgHL0c_Y1FTam",
+										"definitionId": "vendorRequest",
+										"connectionId": "KzQCN7rzUIOMOK0Yjqmcw",
+										"options": {
+											"vendorName": {
+												"value": "multi-me",
+												"isExpression": false
+											},
+											"requestType": {
+												"value": "set_program_index",
+												"isExpression": false
+											},
+											"requestData": {
+												"value": "{\"bank\":\"$(internal:custom_me)\",\"input\":4}",
+												"isExpression": false
+											}
+										},
+										"upgradeIndex": 7,
+										"type": "action"
+									}
+								],
+								"up": []
+							},
+							"options": {
+								"runWhileHeld": []
+							}
+						}
+					},
+					"localVariables": []
+				},
+				"4": {
+					"type": "button",
+					"style": {
+						"text": "PGM\\n5",
+						"textExpression": false,
+						"size": "14",
+						"png64": null,
+						"alignment": "center:center",
+						"pngalignment": "center:center",
+						"color": 16777215,
+						"bgcolor": 6689041,
+						"show_topbar": "default"
+					},
+					"options": {
+						"stepProgression": "auto",
+						"stepExpression": "",
+						"rotaryActions": false
+					},
+					"feedbacks": [],
+					"steps": {
+						"0": {
+							"action_sets": {
+								"down": [
+									{
+										"id": "1lk15ye1G3F3JgT0HXRlP",
+										"definitionId": "vendorRequest",
+										"connectionId": "KzQCN7rzUIOMOK0Yjqmcw",
+										"options": {
+											"vendorName": {
+												"value": "multi-me",
+												"isExpression": false
+											},
+											"requestType": {
+												"value": "set_program_index",
+												"isExpression": false
+											},
+											"requestData": {
+												"value": "{\"bank\":\"$(internal:custom_me)\",\"input\":5}",
+												"isExpression": false
+											}
+										},
+										"upgradeIndex": 7,
+										"type": "action"
+									}
+								],
+								"up": []
+							},
+							"options": {
+								"runWhileHeld": []
+							}
+						}
+					},
+					"localVariables": []
+				},
+				"5": {
+					"type": "button",
+					"style": {
+						"text": "PGM\\n6",
+						"textExpression": false,
+						"size": "14",
+						"png64": null,
+						"alignment": "center:center",
+						"pngalignment": "center:center",
+						"color": 16777215,
+						"bgcolor": 6689041,
+						"show_topbar": "default"
+					},
+					"options": {
+						"stepProgression": "auto",
+						"stepExpression": "",
+						"rotaryActions": false
+					},
+					"feedbacks": [],
+					"steps": {
+						"0": {
+							"action_sets": {
+								"down": [
+									{
+										"id": "prbGL1IhRuRWfZXS88y2r",
+										"definitionId": "vendorRequest",
+										"connectionId": "KzQCN7rzUIOMOK0Yjqmcw",
+										"options": {
+											"vendorName": {
+												"value": "multi-me",
+												"isExpression": false
+											},
+											"requestType": {
+												"value": "set_program_index",
+												"isExpression": false
+											},
+											"requestData": {
+												"value": "{\"bank\":\"$(internal:custom_me)\",\"input\":6}",
+												"isExpression": false
+											}
+										},
+										"upgradeIndex": 7,
+										"type": "action"
+									}
+								],
+								"up": []
+							},
+							"options": {
+								"runWhileHeld": []
+							}
+						}
+					},
+					"localVariables": []
+				},
+				"6": {
+					"type": "button",
+					"style": {
+						"text": "PGM\\n7",
+						"textExpression": false,
+						"size": "14",
+						"png64": null,
+						"alignment": "center:center",
+						"pngalignment": "center:center",
+						"color": 16777215,
+						"bgcolor": 6689041,
+						"show_topbar": "default"
+					},
+					"options": {
+						"stepProgression": "auto",
+						"stepExpression": "",
+						"rotaryActions": false
+					},
+					"feedbacks": [],
+					"steps": {
+						"0": {
+							"action_sets": {
+								"down": [
+									{
+										"id": "xF5Uk2Pkhtu41fNGM5vEf",
+										"definitionId": "vendorRequest",
+										"connectionId": "KzQCN7rzUIOMOK0Yjqmcw",
+										"options": {
+											"vendorName": {
+												"value": "multi-me",
+												"isExpression": false
+											},
+											"requestType": {
+												"value": "set_program_index",
+												"isExpression": false
+											},
+											"requestData": {
+												"value": "{\"bank\":\"$(internal:custom_me)\",\"input\":7}",
+												"isExpression": false
+											}
+										},
+										"upgradeIndex": 7,
+										"type": "action"
+									}
+								],
+								"up": []
+							},
+							"options": {
+								"runWhileHeld": []
+							}
+						}
+					},
+					"localVariables": []
+				},
+				"7": {
+					"type": "button",
+					"style": {
+						"text": "PGM\\n8",
+						"textExpression": false,
+						"size": "14",
+						"png64": null,
+						"alignment": "center:center",
+						"pngalignment": "center:center",
+						"color": 16777215,
+						"bgcolor": 6689041,
+						"show_topbar": "default"
+					},
+					"options": {
+						"stepProgression": "auto",
+						"stepExpression": "",
+						"rotaryActions": false
+					},
+					"feedbacks": [],
+					"steps": {
+						"0": {
+							"action_sets": {
+								"down": [
+									{
+										"id": "BQX5kdd880DBoyWpHDH73",
+										"definitionId": "vendorRequest",
+										"connectionId": "KzQCN7rzUIOMOK0Yjqmcw",
+										"options": {
+											"vendorName": {
+												"value": "multi-me",
+												"isExpression": false
+											},
+											"requestType": {
+												"value": "set_program_index",
+												"isExpression": false
+											},
+											"requestData": {
+												"value": "{\"bank\":\"$(internal:custom_me)\",\"input\":8}",
+												"isExpression": false
+											}
+										},
+										"upgradeIndex": 7,
+										"type": "action"
+									}
+								],
+								"up": []
+							},
+							"options": {
+								"runWhileHeld": []
+							}
+						}
+					},
+					"localVariables": []
+				}
+			},
+			"2": {
+				"0": {
+					"type": "button",
+					"style": {
+						"text": "PVW\\n1",
+						"textExpression": false,
+						"size": "14",
+						"png64": null,
+						"alignment": "center:center",
+						"pngalignment": "center:center",
+						"color": 16777215,
+						"bgcolor": 1131554,
+						"show_topbar": "default"
+					},
+					"options": {
+						"stepProgression": "auto",
+						"stepExpression": "",
+						"rotaryActions": false
+					},
+					"feedbacks": [],
+					"steps": {
+						"0": {
+							"action_sets": {
+								"down": [
+									{
+										"id": "wowNAcQ7WpC3z3MD1foF-",
+										"definitionId": "vendorRequest",
+										"connectionId": "KzQCN7rzUIOMOK0Yjqmcw",
+										"options": {
+											"vendorName": {
+												"value": "multi-me",
+												"isExpression": false
+											},
+											"requestType": {
+												"value": "set_preview_index",
+												"isExpression": false
+											},
+											"requestData": {
+												"value": "{\"bank\":\"$(internal:custom_me)\",\"input\":1}",
+												"isExpression": false
+											}
+										},
+										"upgradeIndex": 7,
+										"type": "action"
+									}
+								],
+								"up": []
+							},
+							"options": {
+								"runWhileHeld": []
+							}
+						}
+					},
+					"localVariables": []
+				},
+				"1": {
+					"type": "button",
+					"style": {
+						"text": "PVW\\n2",
+						"textExpression": false,
+						"size": "14",
+						"png64": null,
+						"alignment": "center:center",
+						"pngalignment": "center:center",
+						"color": 16777215,
+						"bgcolor": 1131554,
+						"show_topbar": "default"
+					},
+					"options": {
+						"stepProgression": "auto",
+						"stepExpression": "",
+						"rotaryActions": false
+					},
+					"feedbacks": [],
+					"steps": {
+						"0": {
+							"action_sets": {
+								"down": [
+									{
+										"id": "Rwc5Ii_cD9EfnSCwgoeNX",
+										"definitionId": "vendorRequest",
+										"connectionId": "KzQCN7rzUIOMOK0Yjqmcw",
+										"options": {
+											"vendorName": {
+												"value": "multi-me",
+												"isExpression": false
+											},
+											"requestType": {
+												"value": "set_preview_index",
+												"isExpression": false
+											},
+											"requestData": {
+												"value": "{\"bank\":\"$(internal:custom_me)\",\"input\":2}",
+												"isExpression": false
+											}
+										},
+										"upgradeIndex": 7,
+										"type": "action"
+									}
+								],
+								"up": []
+							},
+							"options": {
+								"runWhileHeld": []
+							}
+						}
+					},
+					"localVariables": []
+				},
+				"2": {
+					"type": "button",
+					"style": {
+						"text": "PVW\\n3",
+						"textExpression": false,
+						"size": "14",
+						"png64": null,
+						"alignment": "center:center",
+						"pngalignment": "center:center",
+						"color": 16777215,
+						"bgcolor": 1131554,
+						"show_topbar": "default"
+					},
+					"options": {
+						"stepProgression": "auto",
+						"stepExpression": "",
+						"rotaryActions": false
+					},
+					"feedbacks": [],
+					"steps": {
+						"0": {
+							"action_sets": {
+								"down": [
+									{
+										"id": "qzxLOcZjpfxwHqdzZqH5e",
+										"definitionId": "vendorRequest",
+										"connectionId": "KzQCN7rzUIOMOK0Yjqmcw",
+										"options": {
+											"vendorName": {
+												"value": "multi-me",
+												"isExpression": false
+											},
+											"requestType": {
+												"value": "set_preview_index",
+												"isExpression": false
+											},
+											"requestData": {
+												"value": "{\"bank\":\"$(internal:custom_me)\",\"input\":3}",
+												"isExpression": false
+											}
+										},
+										"upgradeIndex": 7,
+										"type": "action"
+									}
+								],
+								"up": []
+							},
+							"options": {
+								"runWhileHeld": []
+							}
+						}
+					},
+					"localVariables": []
+				},
+				"3": {
+					"type": "button",
+					"style": {
+						"text": "PVW\\n4",
+						"textExpression": false,
+						"size": "14",
+						"png64": null,
+						"alignment": "center:center",
+						"pngalignment": "center:center",
+						"color": 16777215,
+						"bgcolor": 1131554,
+						"show_topbar": "default"
+					},
+					"options": {
+						"stepProgression": "auto",
+						"stepExpression": "",
+						"rotaryActions": false
+					},
+					"feedbacks": [],
+					"steps": {
+						"0": {
+							"action_sets": {
+								"down": [
+									{
+										"id": "vLTb-gaFrjZGyf6TrWxyj",
+										"definitionId": "vendorRequest",
+										"connectionId": "KzQCN7rzUIOMOK0Yjqmcw",
+										"options": {
+											"vendorName": {
+												"value": "multi-me",
+												"isExpression": false
+											},
+											"requestType": {
+												"value": "set_preview_index",
+												"isExpression": false
+											},
+											"requestData": {
+												"value": "{\"bank\":\"$(internal:custom_me)\",\"input\":4}",
+												"isExpression": false
+											}
+										},
+										"upgradeIndex": 7,
+										"type": "action"
+									}
+								],
+								"up": []
+							},
+							"options": {
+								"runWhileHeld": []
+							}
+						}
+					},
+					"localVariables": []
+				},
+				"4": {
+					"type": "button",
+					"style": {
+						"text": "PVW\\n5",
+						"textExpression": false,
+						"size": "14",
+						"png64": null,
+						"alignment": "center:center",
+						"pngalignment": "center:center",
+						"color": 16777215,
+						"bgcolor": 1131554,
+						"show_topbar": "default"
+					},
+					"options": {
+						"stepProgression": "auto",
+						"stepExpression": "",
+						"rotaryActions": false
+					},
+					"feedbacks": [],
+					"steps": {
+						"0": {
+							"action_sets": {
+								"down": [
+									{
+										"id": "BlZJ5-Ge-wlqT5JbvRCQ2",
+										"definitionId": "vendorRequest",
+										"connectionId": "KzQCN7rzUIOMOK0Yjqmcw",
+										"options": {
+											"vendorName": {
+												"value": "multi-me",
+												"isExpression": false
+											},
+											"requestType": {
+												"value": "set_preview_index",
+												"isExpression": false
+											},
+											"requestData": {
+												"value": "{\"bank\":\"$(internal:custom_me)\",\"input\":5}",
+												"isExpression": false
+											}
+										},
+										"upgradeIndex": 7,
+										"type": "action"
+									}
+								],
+								"up": []
+							},
+							"options": {
+								"runWhileHeld": []
+							}
+						}
+					},
+					"localVariables": []
+				},
+				"5": {
+					"type": "button",
+					"style": {
+						"text": "PVW\\n6",
+						"textExpression": false,
+						"size": "14",
+						"png64": null,
+						"alignment": "center:center",
+						"pngalignment": "center:center",
+						"color": 16777215,
+						"bgcolor": 1131554,
+						"show_topbar": "default"
+					},
+					"options": {
+						"stepProgression": "auto",
+						"stepExpression": "",
+						"rotaryActions": false
+					},
+					"feedbacks": [],
+					"steps": {
+						"0": {
+							"action_sets": {
+								"down": [
+									{
+										"id": "1tjRpWC7IKYZh65p9lVL1",
+										"definitionId": "vendorRequest",
+										"connectionId": "KzQCN7rzUIOMOK0Yjqmcw",
+										"options": {
+											"vendorName": {
+												"value": "multi-me",
+												"isExpression": false
+											},
+											"requestType": {
+												"value": "set_preview_index",
+												"isExpression": false
+											},
+											"requestData": {
+												"value": "{\"bank\":\"$(internal:custom_me)\",\"input\":6}",
+												"isExpression": false
+											}
+										},
+										"upgradeIndex": 7,
+										"type": "action"
+									}
+								],
+								"up": []
+							},
+							"options": {
+								"runWhileHeld": []
+							}
+						}
+					},
+					"localVariables": []
+				},
+				"6": {
+					"type": "button",
+					"style": {
+						"text": "PVW\\n7",
+						"textExpression": false,
+						"size": "14",
+						"png64": null,
+						"alignment": "center:center",
+						"pngalignment": "center:center",
+						"color": 16777215,
+						"bgcolor": 1131554,
+						"show_topbar": "default"
+					},
+					"options": {
+						"stepProgression": "auto",
+						"stepExpression": "",
+						"rotaryActions": false
+					},
+					"feedbacks": [],
+					"steps": {
+						"0": {
+							"action_sets": {
+								"down": [
+									{
+										"id": "fhX7dndNQRahuvi4ys_EP",
+										"definitionId": "vendorRequest",
+										"connectionId": "KzQCN7rzUIOMOK0Yjqmcw",
+										"options": {
+											"vendorName": {
+												"value": "multi-me",
+												"isExpression": false
+											},
+											"requestType": {
+												"value": "set_preview_index",
+												"isExpression": false
+											},
+											"requestData": {
+												"value": "{\"bank\":\"$(internal:custom_me)\",\"input\":7}",
+												"isExpression": false
+											}
+										},
+										"upgradeIndex": 7,
+										"type": "action"
+									}
+								],
+								"up": []
+							},
+							"options": {
+								"runWhileHeld": []
+							}
+						}
+					},
+					"localVariables": []
+				},
+				"7": {
+					"type": "button",
+					"style": {
+						"text": "PVW\\n8",
+						"textExpression": false,
+						"size": "14",
+						"png64": null,
+						"alignment": "center:center",
+						"pngalignment": "center:center",
+						"color": 16777215,
+						"bgcolor": 1131554,
+						"show_topbar": "default"
+					},
+					"options": {
+						"stepProgression": "auto",
+						"stepExpression": "",
+						"rotaryActions": false
+					},
+					"feedbacks": [],
+					"steps": {
+						"0": {
+							"action_sets": {
+								"down": [
+									{
+										"id": "qDZfzA-JsWgNC9yqtfKQP",
+										"definitionId": "vendorRequest",
+										"connectionId": "KzQCN7rzUIOMOK0Yjqmcw",
+										"options": {
+											"vendorName": {
+												"value": "multi-me",
+												"isExpression": false
+											},
+											"requestType": {
+												"value": "set_preview_index",
+												"isExpression": false
+											},
+											"requestData": {
+												"value": "{\"bank\":\"$(internal:custom_me)\",\"input\":8}",
+												"isExpression": false
+											}
+										},
+										"upgradeIndex": 7,
+										"type": "action"
+									}
+								],
+								"up": []
+							},
+							"options": {
+								"runWhileHeld": []
+							}
+						}
+					},
+					"localVariables": []
+				}
+			},
+			"3": {
+				"0": {
+					"type": "button",
+					"style": {
+						"text": "Fade",
+						"textExpression": false,
+						"size": "18",
+						"png64": null,
+						"alignment": "center:center",
+						"pngalignment": "center:center",
+						"color": 16777215,
+						"bgcolor": 2899536,
+						"show_topbar": "default"
+					},
+					"options": {
+						"stepProgression": "auto",
+						"stepExpression": "",
+						"rotaryActions": false
+					},
+					"feedbacks": [],
+					"steps": {
+						"0": {
+							"action_sets": {
+								"down": [
+									{
+										"id": "0XGRJpjlKrS4bkgJbw8af",
+										"definitionId": "vendorRequest",
+										"connectionId": "KzQCN7rzUIOMOK0Yjqmcw",
+										"options": {
+											"vendorName": {
+												"value": "multi-me",
+												"isExpression": false
+											},
+											"requestType": {
+												"value": "set_transition",
+												"isExpression": false
+											},
+											"requestData": {
+												"value": "{\"bank\":\"$(internal:custom_me)\",\"kind\":\"fade_transition\"}",
+												"isExpression": false
+											}
+										},
+										"upgradeIndex": 7,
+										"type": "action"
+									}
+								],
+								"up": []
+							},
+							"options": {
+								"runWhileHeld": []
+							}
+						}
+					},
+					"localVariables": []
+				},
+				"1": {
+					"type": "button",
+					"style": {
+						"text": "Swipe",
+						"textExpression": false,
+						"size": "18",
+						"png64": null,
+						"alignment": "center:center",
+						"pngalignment": "center:center",
+						"color": 16777215,
+						"bgcolor": 2899536,
+						"show_topbar": "default"
+					},
+					"options": {
+						"stepProgression": "auto",
+						"stepExpression": "",
+						"rotaryActions": false
+					},
+					"feedbacks": [],
+					"steps": {
+						"0": {
+							"action_sets": {
+								"down": [
+									{
+										"id": "2Dc_DDwDxrS3Lp2UVFDJ4",
+										"definitionId": "vendorRequest",
+										"connectionId": "KzQCN7rzUIOMOK0Yjqmcw",
+										"options": {
+											"vendorName": {
+												"value": "multi-me",
+												"isExpression": false
+											},
+											"requestType": {
+												"value": "set_transition",
+												"isExpression": false
+											},
+											"requestData": {
+												"value": "{\"bank\":\"$(internal:custom_me)\",\"kind\":\"swipe_transition\"}",
+												"isExpression": false
+											}
+										},
+										"upgradeIndex": 7,
+										"type": "action"
+									}
+								],
+								"up": []
+							},
+							"options": {
+								"runWhileHeld": []
+							}
+						}
+					},
+					"localVariables": []
+				},
+				"2": {
+					"type": "button",
+					"style": {
+						"text": "200ms",
+						"textExpression": false,
+						"size": "18",
+						"png64": null,
+						"alignment": "center:center",
+						"pngalignment": "center:center",
+						"color": 16777215,
+						"bgcolor": 2899536,
+						"show_topbar": "default"
+					},
+					"options": {
+						"stepProgression": "auto",
+						"stepExpression": "",
+						"rotaryActions": false
+					},
+					"feedbacks": [],
+					"steps": {
+						"0": {
+							"action_sets": {
+								"down": [
+									{
+										"id": "yLK5gd6p8gVMuYO0RMoIc",
+										"definitionId": "vendorRequest",
+										"connectionId": "KzQCN7rzUIOMOK0Yjqmcw",
+										"options": {
+											"vendorName": {
+												"value": "multi-me",
+												"isExpression": false
+											},
+											"requestType": {
+												"value": "set_duration",
+												"isExpression": false
+											},
+											"requestData": {
+												"value": "{\"bank\":\"$(internal:custom_me)\",\"ms\":200}",
+												"isExpression": false
+											}
+										},
+										"upgradeIndex": 7,
+										"type": "action"
+									}
+								],
+								"up": []
+							},
+							"options": {
+								"runWhileHeld": []
+							}
+						}
+					},
+					"localVariables": []
+				},
+				"3": {
+					"type": "button",
+					"style": {
+						"text": "400ms",
+						"textExpression": false,
+						"size": "18",
+						"png64": null,
+						"alignment": "center:center",
+						"pngalignment": "center:center",
+						"color": 16777215,
+						"bgcolor": 2899536,
+						"show_topbar": "default"
+					},
+					"options": {
+						"stepProgression": "auto",
+						"stepExpression": "",
+						"rotaryActions": false
+					},
+					"feedbacks": [],
+					"steps": {
+						"0": {
+							"action_sets": {
+								"down": [
+									{
+										"id": "yF-t1HuswaJplK31DcEcp",
+										"definitionId": "vendorRequest",
+										"connectionId": "KzQCN7rzUIOMOK0Yjqmcw",
+										"options": {
+											"vendorName": {
+												"value": "multi-me",
+												"isExpression": false
+											},
+											"requestType": {
+												"value": "set_duration",
+												"isExpression": false
+											},
+											"requestData": {
+												"value": "{\"bank\":\"$(internal:custom_me)\",\"ms\":400}",
+												"isExpression": false
+											}
+										},
+										"upgradeIndex": 7,
+										"type": "action"
+									}
+								],
+								"up": []
+							},
+							"options": {
+								"runWhileHeld": []
+							}
+						}
+					},
+					"localVariables": []
+				},
+				"6": {
+					"type": "button",
+					"style": {
+						"text": "CUT",
+						"textExpression": false,
+						"size": "24",
+						"png64": null,
+						"alignment": "center:center",
+						"pngalignment": "center:center",
+						"color": 16777215,
+						"bgcolor": 12597547,
+						"show_topbar": "default"
+					},
+					"options": {
+						"stepProgression": "auto",
+						"stepExpression": "",
+						"rotaryActions": false
+					},
+					"feedbacks": [],
+					"steps": {
+						"0": {
+							"action_sets": {
+								"down": [
+									{
+										"id": "JnfZPFN2mUJg1n0nGOSqA",
+										"definitionId": "vendorRequest",
+										"connectionId": "KzQCN7rzUIOMOK0Yjqmcw",
+										"options": {
+											"vendorName": {
+												"value": "multi-me",
+												"isExpression": false
+											},
+											"requestType": {
+												"value": "cut",
+												"isExpression": false
+											},
+											"requestData": {
+												"value": "{\"bank\":\"$(internal:custom_me)\"}",
+												"isExpression": false
+											}
+										},
+										"upgradeIndex": 7,
+										"type": "action"
+									}
+								],
+								"up": []
+							},
+							"options": {
+								"runWhileHeld": []
+							}
+						}
+					},
+					"localVariables": []
+				},
+				"7": {
+					"type": "button",
+					"style": {
+						"text": "AUTO",
+						"textExpression": false,
+						"size": "18",
+						"png64": null,
+						"alignment": "center:center",
+						"pngalignment": "center:center",
+						"color": 16777215,
+						"bgcolor": 15105570,
+						"show_topbar": "default"
+					},
+					"options": {
+						"stepProgression": "auto",
+						"stepExpression": "",
+						"rotaryActions": false
+					},
+					"feedbacks": [],
+					"steps": {
+						"0": {
+							"action_sets": {
+								"down": [
+									{
+										"id": "wOAj_xr2BwjiEqVdmkXKF",
+										"definitionId": "vendorRequest",
+										"connectionId": "KzQCN7rzUIOMOK0Yjqmcw",
+										"options": {
+											"vendorName": {
+												"value": "multi-me",
+												"isExpression": false
+											},
+											"requestType": {
+												"value": "auto",
+												"isExpression": false
+											},
+											"requestData": {
+												"value": "{\"bank\":\"$(internal:custom_me)\"}",
+												"isExpression": false
+											}
+										},
+										"upgradeIndex": 7,
+										"type": "action"
+									}
+								],
+								"up": []
+							},
+							"options": {
+								"runWhileHeld": []
+							}
+						}
+					},
+					"localVariables": []
+				}
+			}
+		},
+		"gridSize": {
+			"minColumn": 0,
+			"maxColumn": 7,
+			"minRow": 0,
+			"maxRow": 3
+		}
+	},
+	"instances": {
+		"KzQCN7rzUIOMOK0Yjqmcw": {
+			"moduleInstanceType": "connection",
+			"moduleId": "obs-studio",
+			"moduleVersionId": "3.13.0",
+			"updatePolicy": "stable",
+			"sortOrder": 10,
+			"label": "obs",
+			"isFirstInit": false,
+			"config": {
+				"port": 4455,
+				"host": "192.168.8.185",
+				"pass": "123456"
+			},
+			"secrets": {},
+			"lastUpgradeIndex": 7,
+			"enabled": true
+		}
+	},
+	"connectionCollections": [],
+	"oldPageNumber": 12
+}

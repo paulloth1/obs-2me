@@ -18,6 +18,7 @@
 !/PROJEKT.md
 !/dev
 !/docs
+!/companion
 
 # Exclude lock files
 *.lock.json

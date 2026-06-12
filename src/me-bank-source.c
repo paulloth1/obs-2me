@@ -240,10 +240,8 @@ static void me_bank_proc_set_preview_index(void *data, calldata_t *cd)
 }
 
 /* Program bus: put the chosen scene IMMEDIATELY on program (hard cut). */
-static void me_bank_proc_set_program(void *data, calldata_t *cd)
+static void bank_set_program(struct me_bank *b, const char *scene)
 {
-	struct me_bank *b = data;
-	const char *scene = calldata_string(cd, "scene");
 	obs_source_t *pgm = (scene && *scene) ? obs_get_source_by_name(scene) : NULL;
 
 	pthread_mutex_lock(&b->mutex);
@@ -258,6 +256,27 @@ static void me_bank_proc_set_program(void *data, calldata_t *cd)
 	obs_data_t *s = obs_source_get_settings(b->source);
 	obs_data_set_string(s, "pgm_scene", scene ? scene : "");
 	obs_data_release(s);
+}
+
+/* Set program to the (index+1)-th bus scene (1-based input for control surfaces). */
+static void bank_set_program_by_index(struct me_bank *b, int index)
+{
+	struct me_pick_scene pk = {.target = index, .cur = 0, .found = false};
+	me_scenes_enum(obs_source_get_uuid(b->source), me_pick_scene_cb, &pk);
+	if (pk.found)
+		bank_set_program(b, pk.name);
+}
+
+static void me_bank_proc_set_program(void *data, calldata_t *cd)
+{
+	bank_set_program((struct me_bank *)data, calldata_string(cd, "scene"));
+}
+
+static void me_bank_proc_set_program_index(void *data, calldata_t *cd)
+{
+	long long input = calldata_int(cd, "input");
+	if (input >= 1)
+		bank_set_program_by_index((struct me_bank *)data, (int)(input - 1));
 }
 
 static void me_bank_proc_set_transition(void *data, calldata_t *cd)
@@ -493,6 +512,7 @@ static void *me_bank_create(obs_data_t *settings, obs_source_t *source)
 	proc_handler_add(ph, "void set_preview(in string scene)", me_bank_proc_set_preview, b);
 	proc_handler_add(ph, "void set_preview_index(in int input)", me_bank_proc_set_preview_index, b);
 	proc_handler_add(ph, "void set_program(in string scene)", me_bank_proc_set_program, b);
+	proc_handler_add(ph, "void set_program_index(in int input)", me_bank_proc_set_program_index, b);
 	proc_handler_add(ph, "void set_transition(in string kind)", me_bank_proc_set_transition, b);
 	proc_handler_add(ph, "void set_duration(in int ms)", me_bank_proc_set_duration, b);
 	proc_handler_add(ph, "void start_record(out bool recording, out bool ok)", me_bank_proc_start_record, b);
