@@ -30,12 +30,15 @@ The four **M/E** buttons select the active bank (the selected one lights up gree
 hard-cuts the N-th bus scene to program; **PVW** loads it to preview; **Fade/Swipe** set the
 transition type and **200/400 ms** its duration; **CUT/AUTO** perform the take.
 
-**Live tally:** the PGM/PVW rows light up to show the selected bank's real preview (green) and
-program (red) input via `VendorEvent` feedbacks (`state_#N` events from the plugin) — this
-reflects switching done anywhere (dock, multiview, hotkeys), not just from Companion.
+**Live tally:** the PGM/PVW rows light up (green = preview, red = program) for the input you
+switch from Companion, via Companion custom variables (`me_pvw` / `me_pgm`). The page's
+*Set Custom Variable* actions use **“Create if not exists”**, so `me`, `me_pvw` and `me_pgm` are
+created automatically on first use — no manual setup.
 
-> Tip: to skip creating the `me` variable by hand, tick **“Create if not exists”** on each of
-> the four M/E selector buttons' *Set Custom Variable* action.
+> Scope: this mirror reflects switching done **through Companion**. Switching in the dock or by
+> OBS hotkey isn't mirrored, and the tally is global (after changing the M/E selector it may be
+> stale until you touch a PVW/PGM button). The plugin also emits `state` vendor events
+> (`pvw_in`/`pgm_in`/`rec`) for a real-state tally — see [../docs/companion.md](../docs/companion.md) §5.
 
 See [../docs/companion.md](../docs/companion.md) for the full request reference and the
 custom-variable tally pattern.

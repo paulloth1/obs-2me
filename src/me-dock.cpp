@@ -259,8 +259,8 @@ static void dock_tick(DockCtx *ctx)
 		dock_fill_bus(ctx);
 	}
 
-	QString pgmN, pvwN;
-	int rec = 0;
+	QString pgmN, pvwN, kindN;
+	int rec = 0, durV = -1;
 	obs_source_t *bank = dock_bank(ctx);
 	if (bank) {
 		calldata_t cd;
@@ -268,13 +268,29 @@ static void dock_tick(DockCtx *ctx)
 		proc_handler_call(obs_source_get_proc_handler(bank), "get_state", &cd);
 		const char *pgm = calldata_string(&cd, "program");
 		const char *pvw = calldata_string(&cd, "preview");
+		const char *kind = calldata_string(&cd, "kind");
 		if (pgm && *pgm)
 			pgmN = QString::fromUtf8(pgm);
 		if (pvw && *pvw)
 			pvwN = QString::fromUtf8(pvw);
+		if (kind && *kind)
+			kindN = QString::fromUtf8(kind);
+		durV = (int)calldata_int(&cd, "duration");
 		rec = calldata_bool(&cd, "recording") ? 1 : 0;
 		calldata_free(&cd);
 		obs_source_release(bank);
+	}
+
+	/* Keep transition type + duration in sync with external changes
+	 * (WebSocket/Companion); guard so it doesn't re-trigger set_*. */
+	if (!kindN.isEmpty() || durV >= 0) {
+		ctx->updatingControls = true;
+		int ki = ctx->transCombo->findData(kindN);
+		if (ki >= 0 && ki != ctx->transCombo->currentIndex())
+			ctx->transCombo->setCurrentIndex(ki);
+		if (durV >= 0 && durV != ctx->durSpin->value())
+			ctx->durSpin->setValue(durV);
+		ctx->updatingControls = false;
 	}
 
 	if (ctx->recBtn && rec != ctx->lastRec) {
