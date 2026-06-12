@@ -114,17 +114,21 @@ Just copy the desired `hotkey` string into Companion's **Trigger Hotkey by ID** 
 
 ### Real tally via vendor events (recommended)
 
-The plugin **emits a vendor event** `state_#<N>` for bank *N* on every change, carrying the
-current preview/program **bus input** (`pvw_in`, `pgm_in`, 1-based; `0` = none) and `rec`.
-Companion's **VendorEvent feedback** latches on the last matching event, so a button can show
-the live state of the selected bank:
+The plugin **emits a vendor event** `state` on every bank change, carrying the current
+preview/program **bus input** (`pvw_in`, `pgm_in`, 1-based; `0` = none), `rec`, and the bank
+`idx` (`#N`). Companion's **VendorEvent feedback** latches on the last matching event:
 
-- *OBS module → feedback “VendorEvent”*: vendor `multi-me`, event type
-  `state_$(internal:custom_me)`, data key `pvw_in` (or `pgm_in`), data value the button's input
-  number → e.g. green when that input is the live preview.
+- *OBS module → feedback “VendorEvent”*: vendor `multi-me`, event type `state`, data key
+  `pvw_in` (or `pgm_in`), data value the button's input number → green when that input is the
+  live preview.
 
 This reflects the **real** OBS state, including switching done via the dock, multiview or OBS
 hotkeys. The bundled Stream Deck XL page already wires this for the PGM/PVW rows.
+
+> **Bank scope:** the module's VendorEvent feedback does **not** expand variables in its fields
+> and stores only the *last* event, so the tally cannot be filtered to the selected bank — it
+> follows the **most recently changed** bank. For single-operator use (working one M/E at a
+> time) this matches the selected bank; with several banks changing at once it shows the latest.
 
 ### Alternative: custom-variable mirror
 

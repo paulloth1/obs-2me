@@ -461,18 +461,22 @@ static void emit_task(void *param)
 
 			obs_data_t *data = obs_data_create();
 			char b[16];
+			snprintf(b, sizeof(b), "#%d", pc.pos);
+			obs_data_set_string(data, "idx", b);
 			snprintf(b, sizeof(b), "%d", pv.found);
 			obs_data_set_string(data, "pvw_in", b);
 			snprintf(b, sizeof(b), "%d", pg.found);
 			obs_data_set_string(data, "pgm_in", b);
 			obs_data_set_string(data, "rec", rec ? "1" : "0");
 
-			char type[32];
-			snprintf(type, sizeof(type), "state_#%d", pc.pos);
+			/* Fixed event type: the OBS Companion module's VendorEvent feedback
+			 * does NOT expand variables in its fields, so it can't filter by the
+			 * selected bank. A fixed "state" type lets literal feedbacks match;
+			 * the tally then follows the most recently changed bank. */
 			calldata_t cd;
 			calldata_init(&cd);
 			calldata_set_ptr(&cd, "vendor", g_vendor);
-			calldata_set_string(&cd, "type", type);
+			calldata_set_string(&cd, "type", "state");
 			calldata_set_ptr(&cd, "data", data);
 			proc_handler_call(g_api_ph, "vendor_event_emit", &cd);
 			calldata_free(&cd);
