@@ -16,8 +16,9 @@ the Free Software Foundation; either version 2 of the License, or
  * into the proc handlers of the bank sources.
  *
  * Requests (vendorName = "multi-me"):
- *   set_preview  { bank, scene }     -> scene into the bank's preview
- *   set_program  { bank, scene }     -> scene straight to program (hard cut)
+ *   set_preview        { bank, scene } -> scene into the bank's preview
+ *   set_preview_index  { bank, input } -> N-th bus scene (1-based) into preview
+ *   set_program        { bank, scene } -> scene straight to program (hard cut)
  *   cut          { bank }            -> Cut (PVW -> PGM)
  *   auto         { bank }            -> Auto-Take (transition)
  *   get_banks    { }                 -> list of all banks
@@ -28,7 +29,8 @@ the Free Software Foundation; either version 2 of the License, or
  *   start_record { bank }            -> start this bank's file recording
  *   stop_record  { bank }            -> stop this bank's file recording
  *
- * "bank" accepts a UUID or a source name.
+ * "bank" accepts a UUID, a source name, or "#N" (the N-th bank, 1-based) — the
+ * latter lets a generic control surface address banks without knowing names.
  *
  * The binding to obs-websocket goes through its globally registered procs
  * (stable API): "obs_websocket_api_get_ph" -> returns the proc handler, on
@@ -38,7 +40,8 @@ the Free Software Foundation; either version 2 of the License, or
 #include <obs-module.h>
 #include <plugin-support.h>
 #include <string.h>
-#include <stdio.h> /* snprintf */
+#include <stdio.h>  /* snprintf */
+#include <stdlib.h> /* atoi */
 
 #include "me-websocket.h"
 #include "me-bank.h" /* hotkey naming scheme (ME_HOTKEY_*_FMT, ME_PVW_SLOTS) */
@@ -92,11 +95,43 @@ static bool ws_register_request(proc_handler_t *ph, void *vendor, const char *ty
 
 /* ---- Helpers ------------------------------------------------------------ */
 
+/* Find the n-th (1-based) multi_me_bank source in enumeration order. */
+struct nth_bank_ctx {
+	int target;
+	int cur;
+	obs_source_t *found; /* with ref */
+};
+
+static bool nth_bank_cb(void *p, obs_source_t *src)
+{
+	if (strcmp(obs_source_get_id(src), "multi_me_bank") != 0)
+		return true;
+	struct nth_bank_ctx *c = p;
+	if (++c->cur == c->target) {
+		c->found = obs_source_get_ref(src);
+		return false;
+	}
+	return true;
+}
+
+/* Resolve a bank from the "bank" field: "#N" = the N-th bank, otherwise a UUID
+ * or source name. "#N" lets a generic control surface address banks without
+ * knowing their names. */
 static obs_source_t *resolve_bank(obs_data_t *req)
 {
 	const char *bank = obs_data_get_string(req, "bank");
 	if (!bank || !*bank)
 		return NULL;
+
+	if (bank[0] == '#') {
+		int idx = atoi(bank + 1);
+		if (idx < 1)
+			return NULL;
+		struct nth_bank_ctx c = {idx, 0, NULL};
+		obs_enum_sources(nth_bank_cb, &c);
+		return c.found;
+	}
+
 	obs_source_t *s = obs_get_source_by_uuid(bank);
 	if (!s)
 		s = obs_get_source_by_name(bank);
@@ -134,6 +169,23 @@ static void req_set_preview(obs_data_t *req, obs_data_t *res, void *priv)
 		return;
 	}
 	bank_call_scene(b, "set_preview", obs_data_get_string(req, "scene"));
+	obs_data_set_bool(res, "success", true);
+	obs_source_release(b);
+}
+
+static void req_set_preview_index(obs_data_t *req, obs_data_t *res, void *priv)
+{
+	UNUSED_PARAMETER(priv);
+	obs_source_t *b = resolve_bank(req);
+	if (!b) {
+		fail(res, "bank not found");
+		return;
+	}
+	calldata_t cd;
+	calldata_init(&cd);
+	calldata_set_int(&cd, "input", obs_data_get_int(req, "input"));
+	proc_handler_call(obs_source_get_proc_handler(b), "set_preview_index", &cd);
+	calldata_free(&cd);
 	obs_data_set_bool(res, "success", true);
 	obs_source_release(b);
 }
@@ -297,6 +349,7 @@ void me_websocket_register(void)
 		return;
 	}
 	ws_register_request(ph, vendor, "set_preview", req_set_preview);
+	ws_register_request(ph, vendor, "set_preview_index", req_set_preview_index);
 	ws_register_request(ph, vendor, "set_program", req_set_program);
 	ws_register_request(ph, vendor, "cut", req_cut);
 	ws_register_request(ph, vendor, "auto", req_auto);
@@ -304,5 +357,5 @@ void me_websocket_register(void)
 	ws_register_request(ph, vendor, "get_state", req_get_state);
 	ws_register_request(ph, vendor, "start_record", req_start_record);
 	ws_register_request(ph, vendor, "stop_record", req_stop_record);
-	obs_log(LOG_INFO, "obs-websocket vendor 'multi-me' registered (8 requests)");
+	obs_log(LOG_INFO, "obs-websocket vendor 'multi-me' registered (9 requests)");
 }

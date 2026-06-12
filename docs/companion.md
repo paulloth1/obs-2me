@@ -38,16 +38,30 @@ Use the **Custom Vendor Request** action in the OBS module. Always:
 
 - **Vendor Name:** `multi-me`
 - **Request Type:** one from the table
-- **Request Data (JSON):** as shown (`bank` = source name **or** UUID)
+- **Request Data (JSON):** as shown
+
+**Addressing a bank** — the `bank` field accepts:
+- a **source name** (e.g. `"M/E 2"`),
+- a **UUID**, or
+- **`"#N"`** = the N-th bank in order (`"#1"` = first, `"#2"` = second …). This is the easiest
+  way to build a **generic page** that works regardless of how the banks are named.
 
 | Request Type | Request Data | Effect |
 | --- | --- | --- |
-| `set_preview` | `{"bank":"M/E 2","scene":"Scene A"}` | Put a scene into the bank's **preview** (PVW) |
-| `set_program` | `{"bank":"M/E 2","scene":"Scene A"}` | Put a scene **straight** to program (hard cut) |
-| `cut` | `{"bank":"M/E 2"}` | **CUT** (PVW → PGM) |
-| `auto` | `{"bank":"M/E 2"}` | **AUTO/Take** (transition) |
-| `get_banks` | `{}` | List of all banks incl. hotkey IDs (see below) |
-| `get_state` | `{"bank":"M/E 2"}` | `{program, preview, in_transition, kind, duration}` |
+| `set_preview` | `{"bank":"#1","scene":"Scene A"}` | Put a named scene into the bank's **preview** (PVW) |
+| `set_preview_index` | `{"bank":"#1","input":3}` | Put the **N-th bus scene** (1-based) into preview |
+| `set_program` | `{"bank":"#1","scene":"Scene A"}` | Put a scene **straight** to program (hard cut) |
+| `cut` | `{"bank":"#1"}` | **CUT** (PVW → PGM) |
+| `auto` | `{"bank":"#1"}` | **AUTO/Take** (transition) |
+| `set_transition` | `{"bank":"#1","kind":"fade_transition"}` | Set the auto transition type (e.g. `fade_transition`, `wipe_transition`) |
+| `set_duration` | `{"bank":"#1","ms":200}` | Set the auto transition duration (ms) |
+| `start_record` / `stop_record` | `{"bank":"#1"}` | Start / stop the bank's **file recording** |
+| `get_banks` | `{}` | List of all banks incl. ready-made hotkey IDs |
+| `get_state` | `{"bank":"#1"}` | `{program, preview, in_transition, kind, duration, recording, rec_file}` |
+
+> **For multiple banks, prefer vendor requests over "Trigger Hotkey by ID":** the hotkey IDs
+> carry the bank UUID (long and hard to find), and the OBS module's hotkey picker only shows
+> one entry per identical description. Vendor requests address each bank cleanly via `"#N"`.
 
 ---
 
@@ -128,7 +142,46 @@ Companion, the variable mirror is reliable.
 
 ---
 
-## 6. Troubleshooting
+## 6. Stream Deck XL example page (8 × 4)
+
+A ready-made layout that fits a **Stream Deck XL** (8 columns × 4 rows) and controls **any**
+of the first four banks via a selector — no scene names or UUIDs needed (all buttons address
+the bank through the `#N` selector).
+
+Create one **custom variable** `me` (its value is the selected bank, e.g. `#1`). Every control
+button passes `"bank":"$(internal:custom_me)"`.
+
+```
+Col      1        2        3        4        5        6        7        8
+Row 1  In 1     In 2     In 3     In 4     In 5     In 6     In 7     In 8     ← preview bus
+Row 2  CUT      AUTO     Fade     Fade      —        —        —       REC
+                         200 ms   400 ms                               (start/stop)
+Row 3  ME 1     ME 2     ME 3     ME 4      —        —        —        —       ← bank selector
+Row 4   —        —        —        —        —        —        —        —
+```
+
+Per button:
+
+- **In 1…8** — action *Custom Vendor Request*: vendor `multi-me`, type `set_preview_index`,
+  data `{"bank":"$(internal:custom_me)","input":N}`. Optional preview tally: also
+  *Set Custom Variable* `me_pvw` = `N`, and a feedback `me_pvw == N` → green (mirror, see §5).
+- **CUT** — `cut`, data `{"bank":"$(internal:custom_me)"}`.
+- **AUTO** — `auto`, data `{"bank":"$(internal:custom_me)"}`.
+- **Fade 200 ms** — two actions: `set_transition` `{"bank":"$(internal:custom_me)","kind":"fade_transition"}`
+  then `set_duration` `{"bank":"$(internal:custom_me)","ms":200}`.
+- **Fade 400 ms** — same with `"ms":400`.
+- **REC** — a 2-step button: step 1 `start_record`, step 2 `stop_record` (both
+  `{"bank":"$(internal:custom_me)"}`).
+- **ME 1…4** — *Set Custom Variable* `me` = `#1` … `#4`. Feedback *Check Custom Variable*
+  `me == #N` → green, so the selected bank lights up.
+
+> A ready-to-import `.companionconfig` for this page is being prepared in
+> [`companion/`](https://github.com/paulloth1/multi-me/tree/main/companion). Until then, the
+> layout above can be rebuilt in a few minutes.
+
+---
+
+## 7. Troubleshooting
 
 - **"bank not found"**: `bank` doesn't match the source name (case, spaces) — or the UUID
   is wrong. When in doubt, call `get_banks` and copy the name/UUID from there.

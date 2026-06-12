@@ -231,6 +231,14 @@ static void me_bank_proc_set_preview(void *data, calldata_t *cd)
 	bank_set_preview((struct me_bank *)data, calldata_string(cd, "scene"));
 }
 
+/* Set preview by 1-based bus input number (generic control surfaces). */
+static void me_bank_proc_set_preview_index(void *data, calldata_t *cd)
+{
+	long long input = calldata_int(cd, "input");
+	if (input >= 1)
+		bank_set_preview_by_index((struct me_bank *)data, (int)(input - 1));
+}
+
 /* Program bus: put the chosen scene IMMEDIATELY on program (hard cut). */
 static void me_bank_proc_set_program(void *data, calldata_t *cd)
 {
@@ -483,6 +491,7 @@ static void *me_bank_create(obs_data_t *settings, obs_source_t *source)
 	proc_handler_add(ph, "void cut()", me_bank_proc_cut, b);
 	proc_handler_add(ph, "void auto_take()", me_bank_proc_auto, b);
 	proc_handler_add(ph, "void set_preview(in string scene)", me_bank_proc_set_preview, b);
+	proc_handler_add(ph, "void set_preview_index(in int input)", me_bank_proc_set_preview_index, b);
 	proc_handler_add(ph, "void set_program(in string scene)", me_bank_proc_set_program, b);
 	proc_handler_add(ph, "void set_transition(in string kind)", me_bank_proc_set_transition, b);
 	proc_handler_add(ph, "void set_duration(in int ms)", me_bank_proc_set_duration, b);
